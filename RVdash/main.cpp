@@ -1,18 +1,11 @@
 #include "RVdash/InstructionSet/RV32I/InstructionSet.h"
+#include "RVdash/InstructionSet/F/InstructionSet.h"
 #include "Error.h"
 
 
 
 
 namespace rvdash {
-
-enum class Extentions {
-  RV32I,
-  F,
-  V,
-  C,
-  A
-};
 
 auto getSelectedInstructionSets(std::string ExStr) {
   const auto &ExEnumNames = magic_enum::enum_names<Extentions>();
@@ -43,11 +36,13 @@ void generateProcess(const std::string ExStr) {
   std::cout << "Selected Exs:\n";
   for (const auto &Ex : Extentions)
       std::cout << Ex << "\n";
+  std::cout << "\n\n";
 
-  RV32I::InstrDecoder Decoder;
-  auto Instr = Decoder.tryDecode(0b0000'0001'0110'1010'1000'1010'1011'0011);
+  CPU<RV32I::RV32IInstrSet, F::FInstrSet> Cpu;
+  Cpu.add(InstrSet<RV32I::RV32IInstrSet, F::FInstrSet>());
+  Cpu.print();
+  auto Instr = Cpu.tryDecode(0b0000'0001'0110'1010'1000'1010'1011'0011);
   assert(Instr.has_value());
-  Instr.value()->print();
 
 }
 
