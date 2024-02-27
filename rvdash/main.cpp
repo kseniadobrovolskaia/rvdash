@@ -1,5 +1,6 @@
-#include "RVdash/InstructionSet/RV32I/InstructionSet.h"
-#include "RVdash/InstructionSet/F/InstructionSet.h"
+#include "rvdash/InstructionSet/RV32I/InstructionSet.h"
+#include "rvdash/InstructionSet/F/InstructionSet.h"
+#include "rvdash/InstructionSet/M/InstructionSet.h"
 #include "Error.h"
 
 
@@ -8,7 +9,7 @@
 namespace rvdash {
 
 auto getSelectedInstructionSets(std::string ExStr) {
-  const auto &ExEnumNames = magic_enum::enum_names<Extentions>();
+  const auto &ExEnumNames = magic_enum::enum_names<Extensions>();
   std::vector<std::string> ExNames;
   for (const auto &Ex : ExEnumNames)
     ExNames.emplace_back(Ex);
@@ -32,18 +33,19 @@ auto getSelectedInstructionSets(std::string ExStr) {
 }
 
 void generateProcess(const std::string ExStr) {
-  auto Extentions = getSelectedInstructionSets(ExStr);
+  auto Extensions = getSelectedInstructionSets(ExStr);
   std::cout << "Selected Exs:\n";
-  for (const auto &Ex : Extentions)
+  for (const auto &Ex : Extensions)
       std::cout << Ex << "\n";
   std::cout << "\n\n";
 
-  CPU<RV32I::RV32IInstrSet, F::FInstrSet> Cpu;
-  Cpu.add(InstrSet<RV32I::RV32IInstrSet, F::FInstrSet>());
+  CPU<32, RV32I::RV32IInstrSet, F::FInstrSet, M::MInstrSet> Cpu;
+  Cpu.add(InstrSet<32, RV32I::RV32IInstrSet, F::FInstrSet, M::MInstrSet>());
   Cpu.print();
-  auto Instr = Cpu.tryDecode(0b0000'0001'0110'1010'1000'1010'1011'0011);
+  auto Instr = Cpu.tryDecode(std::bitset<32>(0b0000'0001'0110'1010'1000'1010'1011'0011));
   assert(Instr.has_value());
-
+  std::cout << "Is There Base : " << Cpu.isThereBase() << "\n";
+  Cpu.extractPC();
 }
 
 } // namespace rvdash

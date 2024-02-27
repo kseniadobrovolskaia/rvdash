@@ -6,8 +6,10 @@ add_compile_options(-Wall -std=c++20 -fexceptions)
 
 include_directories(../../include)
 
-set(SOURCE_LIB ./RV32I/InstructionSet.cpp
-    #F/InstructionSet.cpp
+set(SOURCE_LIB InstructionSet.cpp
+               ./RV32I/InstructionSet.cpp
+               ./F/InstructionSet.cpp
+               ./M/InstructionSet.cpp
    )
 
 

@@ -4,7 +4,8 @@ project(rvdash)
 
 add_compile_options(-Wall -std=c++20 -fexceptions)
 
-set(SOURCE_EXE ./RVdash/main.cpp)
+set(SOURCE_EXE ./rvdash/main.cpp
+               ./rvdash/Error.cpp)
 
 include_directories(include)
 

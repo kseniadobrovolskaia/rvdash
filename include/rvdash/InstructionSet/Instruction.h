@@ -1,62 +1,14 @@
-#ifndef INSTRUCTION_SET_H
-#define INSTRUCTION_SET_H
+#ifndef INSTRUCTION_H
+#define INSTRUCTION_H
 
-#include <algorithm>
-#include <typeinfo>
-#include <cstdlib>
-#include <stdio.h>
-#include <ctype.h>
-#include <fstream>
-#include <vector>
-#include <signal.h>
-#include <map>
-#include <memory>
-#include <string>
-#include <iostream>
-#include <unordered_map>
-#include <bitset>
-#include <optional>
-#include <cstring>
-
-#include "Error.h"
-#include "magic_enum.hpp"
+#include "rvdash/InstructionSet/Registers.h"
 
 
-#include "RVdash/InstructionSet/RV32I/InstructionSet.h"
 
 
 namespace rvdash {
 
-//-----------------------------------RegistersSet----------------------------------------
-
-template <size_t Sz>
-class RegistersSet {
-public:
-  using Register = std::bitset<Sz>;
-
-  RegistersSet(unsigned Count) : Registers(Count, 0) {};
-  
-  void addNamedRegister(const std::string &Name) {
-    NamedRegisters[Name] = 0;
-  }
-
-  Register &getNamedRegister(const std::string &Name) {
-    return NamedRegisters[Name];
-  }
-  Register getNamedRegister(const std::string &Name) const {
-    return NamedRegisters[Name];
-  }
-  
-  Register operator[](unsigned i) const { 
-    assert(i < Registers.size());
-    return Registers[i]; 
-  }
-
-private:
-  std::vector<Register> Registers;
-  std::unordered_map<std::string, Register> NamedRegisters;
-
-};
+enum class Extensions;
 
 //------------------------------------Instruction----------------------------------------
 
@@ -69,24 +21,15 @@ enum class InstrEncodingType {
   J
 };
 
-enum class Extentions {
-  RV32I,
-  M,
-  A,
-  F,
-  D,
-};
-
-
 template <size_t Sz>
 class Instruction {
 public:
   InstrEncodingType Type;
-  Extentions Ex;
+  Extensions Ex;
 
 public:
   Instruction() {};
-  Instruction(InstrEncodingType T, Extentions Ext) : Type(T), Ex(Ext) {};
+  Instruction(InstrEncodingType T, Extensions Ext) : Type(T), Ex(Ext) {};
 
   virtual void print() const {
     std::cout << "Extension: " << magic_enum::enum_name(Ex)
@@ -125,12 +68,12 @@ class R_Instruction : public Instruction<Sz> {
   std::bitset<7 * Sz / 32> Funct7;
 
 public:
-  R_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  R_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::R, Ext), Instr(Ins) {
     extractAllFields();
   };
 
-  R_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, std::bitset<7 * Sz / 32> F7, Extentions Ext) 
+  R_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, std::bitset<7 * Sz / 32> F7, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::R, Ext), Op(O), Funct3(F3), Funct7(F7) {};
 
   R_Instruction(const R_Instruction &R, const std::bitset<Sz> &Ins) 
@@ -225,16 +168,16 @@ class I_Instruction : public Instruction<Sz> {
   std::bitset<12 * Sz / 32> Imm_11_0;
 
 public:
-  I_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  I_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::I, Ext), Instr(Ins) {
     extractAllFields();
   };
 
-  I_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extentions Ext) 
+  I_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::I, Ext), Op(O), Funct3(F3) {};
 
   I_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, std::bitset<12 * Sz / 32> Imm_110,
-                Extentions Ext) 
+                Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::I, Ext), Op(O), Funct3(F3), Imm_11_0(Imm_110) {};
 
   I_Instruction(const I_Instruction &I, const std::bitset<Sz> &Ins) 
@@ -297,12 +240,12 @@ class S_Instruction : public Instruction<Sz> {
   std::bitset<12 * Sz / 32> Imm_11_5;
 
 public:
-  S_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  S_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::S, Ext), Instr(Ins) {
     extractAllFields();
   };
 
-  S_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extentions Ext) 
+  S_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::S, Ext), Op(O), Funct3(F3) {};
 
   S_Instruction(const S_Instruction &S, const std::bitset<Sz> &Ins) 
@@ -369,12 +312,12 @@ class B_Instruction : public Instruction<Sz> {
   std::bitset<1 * Sz / 32> Imm_12;
 
 public:
-  B_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  B_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::B, Ext), Instr(Ins) {
     extractAllFields();
   };
 
-  B_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extentions Ext) 
+  B_Instruction(std::bitset<7 * Sz / 32> O, std::bitset<3 * Sz / 32> F3, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::B, Ext), Op(O), Funct3(F3) {};
 
   B_Instruction(const B_Instruction &B, const std::bitset<Sz> &Ins) 
@@ -462,7 +405,7 @@ class U_Instruction : public Instruction<Sz> {
   std::bitset<20 * Sz / 32> Imm_31_12;
 
 public:
-  U_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  U_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::U, Ext) {
     if (((Ins >> 7) & std::bitset<Sz>(0x1ffffff)).any()) {
       Op = Ins.to_ulong();
@@ -519,7 +462,7 @@ class J_Instruction : public Instruction<Sz> {
   std::bitset<1 * Sz / 32> Imm_20;
 
 public:
-  J_Instruction(std::bitset<Sz> Ins, Extentions Ext) 
+  J_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction<Sz>(InstrEncodingType::J, Ext) {
     if (((Ins >> 7) & std::bitset<Sz>(0x1ffffff)).any()) {
       Op = Ins.to_ulong();
@@ -578,85 +521,7 @@ public:
 
 };
 
-//----------------------------------InstrDecoder-----------------------------------------
-
-const size_t AddrSpaceSz = 32;
-
-class InstrDecoder {
-
-public:
-  using Register = std::bitset<AddrSpaceSz>;
-  InstrDecoder() {};
-  virtual std::optional<std::shared_ptr<Instruction<AddrSpaceSz>>> tryDecode(Register Instr) const = 0;
-};
-
-//----------------------------------InstrExecutor----------------------------------------
-
-class InstrExecutor {
-
-public:
-  using Register = std::bitset<AddrSpaceSz>;
-  InstrExecutor() {};
-  virtual void execute(const Instruction<AddrSpaceSz> &Instr) const = 0;
-};
-
-//------------------------------------InstrSet-------------------------------------------
-
-
-template <typename... Types>
-void printEx(Types const& ... args) {
-  (std::cout << ... << args) << "\n";
-}
-
-
-
-template <typename... Exts>
-class InstrSet : private Exts... {
-protected:
-
-public:
-  using Register = std::bitset<AddrSpaceSz>;
-  InstrSet() : Exts()... {};
-
-  void print() const {     
-    std::cout << "Instruction Set:\n";
-    printEx(static_cast<const Exts&>(*this)...);
-  }
-  virtual void execute(const Instruction<AddrSpaceSz> &Instr) const {
-    
-  }
-
-  std::optional<std::shared_ptr<Instruction<AddrSpaceSz>>> tryDecode(Register Instr) const {
-    auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
-    assert(Result.has_value());
-    std::cout << "Result of Decode :\n" << *Result.value() << "\n";
-    return Result;
-  }
-};
-
-//-------------------------------------CPU------------------------------------------------
-
-template <typename... Exts>
-class CPU {
-private:
-  InstrSet<Exts...> Extentions;
-
-public:
-
-  void add(const InstrSet<Exts...> &E) { Extentions = E; }
-  void print()
-  {
-      Extentions.print();
-  }
-
-  std::optional<std::shared_ptr<Instruction<AddrSpaceSz>>> tryDecode(typename InstrSet<Exts...>::Register Instr) const {
-    return Extentions.tryDecode(Instr);
-  }
-
-
-};
-
 } // namespace rvdash
 
-#endif // INSTRUCTION_SET_H
+#endif // INSTRUCTION_H
 

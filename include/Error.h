@@ -1,14 +1,15 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include <string>
+#include <stdexcept>
+
 
 
 
 namespace rvdash {
 
-void failWithError(const std::string &Msg) {
-  throw std::logic_error(Msg);
-}
+void failWithError(const std::string &Msg);
 
 } // namespace rvdash
 
