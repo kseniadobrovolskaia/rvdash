@@ -32,9 +32,21 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> MInstrDecoder::tryD
   auto Opcode = rvdash::R_Instruction<RV32ISz>::extractOpcode(Instr);
   auto Funct3 = rvdash::R_Instruction<RV32ISz>::extractFunct3(Instr);
   auto Funct7 = rvdash::R_Instruction<RV32ISz>::extractFunct7(Instr);
-
+  if ((Opcode == 0b000'0000) && (Funct3 == 0b000) && (Funct7 == 0b000'0000))
+    return std::make_shared<rvdash::R_Instruction<RV32ISz>>(MUL, Instr);
   return std::nullopt;
 }
+
+//---------------------------------MInstrExecutor----------------------------------------
+
+void MInstrExecutor::execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+  std::cout << "M execute: ";
+  Instr->print();
+  std::cout << "\n"; 
+}
+
+//-----------------------------------MInstrSet-------------------------------------------
+
 
 std::ostream& operator<<(std::ostream& Stream, const typename M::MInstrSet& Set)
 {

@@ -265,9 +265,10 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
-void RV32IInstrExecutor::execute(const Instruction<RV32ISz> &Instr) const {
-  
-  std::cout << "execute\n"; 
+void RV32IInstrExecutor::execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+  std::cout << "RV32I execute :";
+  Instr->print();
+  std::cout << "\n"; 
 }
 
 //----------------------------------RV32IInstrSet----------------------------------------
@@ -286,7 +287,7 @@ bool isBaseSet<RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S) {
 }
 
 template <>
-std::optional<Register<RV32I::RV32ISz>*> getPC<RV32I::RV32ISz, RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S) {
+std::optional<Register<RV32I::RV32ISz>*> findPC<RV32I::RV32ISz, RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S) {
   return S.getPC();
 }
 

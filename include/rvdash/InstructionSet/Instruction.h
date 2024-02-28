@@ -31,12 +31,15 @@ public:
   Instruction() {};
   Instruction(InstrEncodingType T, Extensions Ext) : Type(T), Ex(Ext) {};
 
+  Extensions getExtension() const { return Ex; }
+
   virtual void print() const {
     std::cout << "Extension: " << magic_enum::enum_name(Ex)
               << ", Type: " << magic_enum::enum_name(Type) << "\n"; 
   }
 
   virtual inline uint8_t getOpcode() const = 0;
+  virtual inline uint8_t getInstr() const = 0;
 
   virtual void extractAllFields() = 0;
 
@@ -93,6 +96,10 @@ public:
 
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
+  }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
   }
 
   inline uint8_t extractFunct3() {
@@ -199,6 +206,10 @@ public:
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
   }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
+  }
 
   inline uint8_t extractFunct3() {
     return ((Instr >> 12) & std::bitset<Sz>(0x7)).to_ulong();
@@ -267,6 +278,11 @@ public:
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
   }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
+  }
+ 
   inline uint8_t extractFunct3() {
     return ((Instr >> 12) & std::bitset<Sz>(0x7)).to_ulong();
   }
@@ -342,6 +358,10 @@ public:
 
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
+  }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
   }
 
   inline uint8_t extractFunct3() {
@@ -432,6 +452,10 @@ public:
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
   }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
+  }
 
   inline int32_t extractImm_31_12() {
     return ((Instr >> 12) & std::bitset<Sz>(0xfffff)).to_ulong();
@@ -488,6 +512,10 @@ public:
 
   inline uint8_t getOpcode() const override {
     return (Instr & std::bitset<Sz>(0x7f)).to_ulong();
+  }
+  
+  inline uint8_t getInstr() const override {
+    return Instr.to_ulong();
   }
 
   inline uint8_t extractImm_19_12() {

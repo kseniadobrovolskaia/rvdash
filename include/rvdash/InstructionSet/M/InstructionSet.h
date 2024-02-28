@@ -27,9 +27,7 @@ class MInstrExecutor {
 
 public:
     MInstrExecutor() {};
-    void execute(const Instruction<RV32ISz> &Instr) const {
-      std::cout << "execute\n"; 
-    }
+    void execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const;
 };
 
 //-----------------------------------MInstrSet-------------------------------------------
@@ -49,6 +47,15 @@ public:
   std::optional<std::shared_ptr<Instruction<RV32ISz>>> tryDecode(Register Instr) const {
     return Decoder.tryDecode(Instr);
   }
+
+  bool tryExecute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+    if (Instr->getExtension() != Extensions::M)
+      return true;
+    Executor.execute(Instr); 
+    return false;
+  }
+
+
 
 };
 

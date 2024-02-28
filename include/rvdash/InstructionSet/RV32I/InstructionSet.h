@@ -10,7 +10,7 @@ namespace rvdash {
 namespace RV32I {
 
 const size_t RV32ISz = 32;
-using Register = std::bitset<RV32ISz>;
+using Register = Register<RV32ISz>;
 
 //--------------------------------RV32IInstrDecoder--------------------------------------
 
@@ -27,7 +27,7 @@ class RV32IInstrExecutor {
 public:
     RV32IInstrExecutor() {};
 
-    void execute(const Instruction<RV32ISz> &Instr) const;
+    void execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const;
 
 };
 
@@ -43,7 +43,6 @@ public:
   RV32IInstrSet() : Registers(X0, X31 - X0) {
     Registers.addNamedRegister("pc");
     ++Registers.getNamedRegister("pc");
-    ++Registers.getNamedRegister("pc");
   }
 
   ~RV32IInstrSet() {};
@@ -56,8 +55,11 @@ public:
     return Decoder.tryDecode(Instr);
   }
 
-  void execute(const Instruction<RV32ISz> &Instr) const {
+  bool tryExecute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+    if (Instr->getExtension() != Extensions::RV32I)
+      return true;
     Executor.execute(Instr); 
+    return false;
   }
 
 };
@@ -71,7 +73,7 @@ template <>
 bool isBaseSet<RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S);
 
 template <>
-std::optional<Register<RV32I::RV32ISz>*> getPC<RV32I::RV32ISz, RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S);
+std::optional<Register<RV32I::RV32ISz>*> findPC<RV32I::RV32ISz, RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S);
 
 } // namespace rvdash
 

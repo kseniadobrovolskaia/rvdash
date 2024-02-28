@@ -1,5 +1,4 @@
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
-#include "rvdash/InstructionSet/F/InstructionSet.h"
 #include "rvdash/InstructionSet/M/InstructionSet.h"
 #include "Error.h"
 
@@ -7,6 +6,32 @@
 
 
 namespace rvdash {
+
+std::string getExtensions(const int argc, const char *argv[]) {
+  if (argc < 2)
+    throw std::logic_error("There are not Extensions in args");
+  return argv[1];
+}
+
+std::string getProgrammName(const int argc, const char *argv[]) {
+  if (argc < 3)
+    throw std::logic_error("There are not programm file name in args");
+  return argv[2];
+}
+
+template <size_t Sz>
+std::vector<Register<Sz>> putProgrammInBuffer(const std::string &ProgName) {
+  std::vector<Register<Sz>> Programm;
+  std::ifstream ProgFile(ProgName);
+  if (!ProgFile.is_open())
+    throw std::logic_error("Can't open file " + ProgName);
+  
+  Register<Sz> Command;
+  while (ProgFile.read(reinterpret_cast<char *>(&Command), sizeof(Command)))
+    Programm.push_back(Command);
+  ProgFile.close();
+  return Programm;
+}
 
 auto getSelectedInstructionSets(std::string ExStr) {
   const auto &ExEnumNames = magic_enum::enum_names<Extensions>();
@@ -22,30 +47,29 @@ auto getSelectedInstructionSets(std::string ExStr) {
       ExStr.erase(Pos, Ex.size());
     }
     if (ExStr.find(Ex) != ExStr.npos)
-      failWithError("Расширение " + Ex + " встретилось несколько раз");
+      failWithError("Extension " + Ex + " parsed several times");
       
   });
   
   if (!ExStr.empty())
-    failWithError("Выбраны неподдерживаемые расширения " + ExStr);
+    failWithError("Unsupported extensions selected" + ExStr);
     
   return SelectedExs;
 }
 
-void generateProcess(const std::string ExStr) {
+template <size_t Sz>
+void generateProcess(const std::string ExStr, const std::vector<Register<Sz>> &Programm) {
   auto Extensions = getSelectedInstructionSets(ExStr);
   std::cout << "Selected Exs:\n";
   for (const auto &Ex : Extensions)
       std::cout << Ex << "\n";
   std::cout << "\n\n";
 
-  CPU<32, RV32I::RV32IInstrSet, F::FInstrSet, M::MInstrSet> Cpu;
-  Cpu.add(InstrSet<32, RV32I::RV32IInstrSet, F::FInstrSet, M::MInstrSet>());
+  CPU<Sz, RV32I::RV32IInstrSet, M::MInstrSet> Cpu;
+  Cpu.add(InstrSet<Sz, RV32I::RV32IInstrSet, M::MInstrSet>());
   Cpu.print();
-  auto Instr = Cpu.tryDecode(std::bitset<32>(0b0000'0001'0110'1010'1000'1010'1011'0011));
-  assert(Instr.has_value());
-  std::cout << "Is There Base : " << Cpu.isThereBase() << "\n";
-  Cpu.extractPC();
+
+  Cpu.execute(Programm);
 }
 
 } // namespace rvdash
@@ -54,9 +78,9 @@ void generateProcess(const std::string ExStr) {
 int main(int Argc, char const **Argv)
 {
   try {
-    if (Argc < 2)
-      rvdash::failWithError("Не выбраны расширения");
-    rvdash::generateProcess(Argv[1]);
+    const unsigned SizePC = 32; 
+    auto Programm = rvdash::putProgrammInBuffer<SizePC>(rvdash::getProgrammName(Argc, Argv));
+    rvdash::generateProcess(rvdash::getExtensions(Argc, Argv), Programm);
   }
   catch(std::exception & ex)
   {

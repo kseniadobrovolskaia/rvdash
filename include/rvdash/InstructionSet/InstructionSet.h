@@ -21,18 +21,13 @@ enum class Extensions {
 
 //------------------------------------InstrSet-------------------------------------------
 
-template <typename... Types>
-void printEx(Types const& ... args) {
-  (std::cout << ... << args) << "\n";
-}
-
 template <typename Set>
 bool isBaseSet(Set S) {
   return false;
 }
 
 template <size_t Sz, typename Set>
-std::optional<Register<Sz>*> getPC(Set S) {
+std::optional<Register<Sz>*> findPC(Set S) {
   return std::nullopt;
 }
 
@@ -41,40 +36,48 @@ std::optional<Register<Sz>*> operator||(std::optional<Register<Sz>*> Lhs, std::o
   return Lhs.has_value() ? Lhs : Rhs;
 }
 
-
+// Sz means size of program counter register PC
 template <size_t Sz, typename... Exts>
 class InstrSet : private Exts... {
+
 protected:
   Register<Sz> *PC;
 
 public:
-  InstrSet() : Exts()... {};
+ 
+  InstrSet() : Exts()... { extractPC(); };
 
+  void extractPC() {
+    auto OptPC = (findPC<Sz>(static_cast<const Exts&>(*this)) || ...);
+    if (!OptPC.has_value())
+      throw std::logic_error("No extension returned the program counter");
+    PC = OptPC.value();
+  } 
+  
   void print() const {     
     std::cout << "Instruction Set:\n";
-    printEx(static_cast<const Exts&>(*this)...);
+    (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
 
-  void execute(const Instruction<Sz> &Instr) const {
-    
+  void execute(std::shared_ptr<Instruction<Sz>> &Instr) const {
+    auto Result = (static_cast<const Exts&>(*this).tryExecute(Instr) && ...);
+    if (Result)
+      throw std::logic_error("Fail execution");
   }
+
+  Register<Sz> getPC() const { return *PC; }
   
   bool isThereBase() {
     return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
   }
 
-  void extractPC() {
-    auto OptPC = (getPC<32>(static_cast<const Exts&>(*this)) || ...);
-    assert(OptPC.has_value());
-    PC = OptPC.value();
-    std::cout << "PC = " << *PC << "\n" ;
-  }
   
-  std::optional<std::shared_ptr<Instruction<Sz>>> tryDecode(Register<Sz> Instr) const {
+  std::shared_ptr<Instruction<Sz>> decode(Register<Sz> Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
-    assert(Result.has_value());
+    if (!Result.has_value())
+      throw std::logic_error("Illegal instruction");
     std::cout << "Result of Decode :\n" << *Result.value() << "\n";
-    return Result;
+    return Result.value();
   }
 };
 
@@ -82,8 +85,8 @@ public:
 
 template <size_t Sz, typename... Exts>
 class CPU {
+
 private:
-  unsigned PC = 0;
   InstrSet<Sz, Exts...> ExtSet;
 
 public:
@@ -94,7 +97,14 @@ public:
       ExtSet.print();
   }
 
-  std::optional<std::shared_ptr<Instruction<Sz>>> tryDecode(Register<Sz> Instr) const {
+  void execute(const std::vector<Register<Sz>> &Programm) const {
+    for (const auto& Cmd : Programm) {
+      auto Instr = ExtSet.decode(Cmd);
+      ExtSet.execute(Instr);
+    }
+  }
+
+  std::shared_ptr<Instruction<Sz>> decode(Register<Sz> Instr) const {
     return ExtSet.tryDecode(Instr);
   }
 

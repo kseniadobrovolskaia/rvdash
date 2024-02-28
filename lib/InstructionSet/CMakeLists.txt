@@ -8,7 +8,6 @@ include_directories(../../include)
 
 set(SOURCE_LIB InstructionSet.cpp
                ./RV32I/InstructionSet.cpp
-               ./F/InstructionSet.cpp
                ./M/InstructionSet.cpp
    )
 
