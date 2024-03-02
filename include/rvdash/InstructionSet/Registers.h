@@ -180,8 +180,8 @@ private:
 
 template <size_t Sz>
 std::bitset<Sz> operator++(Register<Sz>& Reg) {
-    Reg = Reg.to_ulong() + Sz;
-    return Reg;
+  Reg = Reg.to_ulong() + Sz;
+  return Reg;
 }
 
 } // namespace rvdash

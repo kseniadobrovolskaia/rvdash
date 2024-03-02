@@ -48,68 +48,68 @@ enum class Opcode {
   EBREAK
 };
 
-rvdash::R_Instruction<RV32ISz>  ADD(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  SUB(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /* Funct7 */ 0b010'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  XOR(/* Opcode */ 0b011'0011, /* Funct3 */ 0b100, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>   OR(/* Opcode */ 0b011'0011, /* Funct3 */ 0b110, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  AND(/* Opcode */ 0b011'0011, /* Funct3 */ 0b111, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  SLL(/* Opcode */ 0b011'0011, /* Funct3 */ 0b001, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  SRL(/* Opcode */ 0b011'0011, /* Funct3 */ 0b101, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  SRA(/* Opcode */ 0b011'0011, /* Funct3 */ 0b101, /* Funct7 */ 0b010'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz>  SLT(/* Opcode */ 0b011'0011, /* Funct3 */ 0b010, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-rvdash::R_Instruction<RV32ISz> SLTU(/* Opcode */ 0b011'0011, /* Funct3 */ 0b011, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  ADD(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  SUB(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /* Funct7 */ 0b010'0000, Extensions::RV32I);
+rvdash::R_Instruction  XOR(/* Opcode */ 0b011'0011, /* Funct3 */ 0b100, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction   OR(/* Opcode */ 0b011'0011, /* Funct3 */ 0b110, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  AND(/* Opcode */ 0b011'0011, /* Funct3 */ 0b111, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  SLL(/* Opcode */ 0b011'0011, /* Funct3 */ 0b001, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  SRL(/* Opcode */ 0b011'0011, /* Funct3 */ 0b101, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction  SRA(/* Opcode */ 0b011'0011, /* Funct3 */ 0b101, /* Funct7 */ 0b010'0000, Extensions::RV32I);
+rvdash::R_Instruction  SLT(/* Opcode */ 0b011'0011, /* Funct3 */ 0b010, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::R_Instruction SLTU(/* Opcode */ 0b011'0011, /* Funct3 */ 0b011, /* Funct7 */ 0b000'0000, Extensions::RV32I);
 
-rvdash::I_Instruction<RV32ISz>  ADDI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b000, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  XORI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b100, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>   ORI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b110, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  ANDI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b111, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  SLLI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b001, /* Imm_11_0 */ 0b0000'0000'0000, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  SRLI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b101, /* Imm_11_0 */ 0b0000'0000'0000, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  SRAI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b101, /* Imm_11_0 */ 0b0000'0010'0000, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  SLTI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b010, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz> SLTIU(/* Opcode */ 0b001'0011, /* Funct3 */ 0b011, Extensions::RV32I);
+rvdash::I_Instruction  ADDI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b000, Extensions::RV32I);
+rvdash::I_Instruction  XORI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b100, Extensions::RV32I);
+rvdash::I_Instruction   ORI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b110, Extensions::RV32I);
+rvdash::I_Instruction  ANDI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b111, Extensions::RV32I);
+rvdash::I_Instruction  SLLI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b001, /* Imm_11_0 */ 0b0000'0000'0000, Extensions::RV32I);
+rvdash::I_Instruction  SRLI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b101, /* Imm_11_0 */ 0b0000'0000'0000, Extensions::RV32I);
+rvdash::I_Instruction  SRAI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b101, /* Imm_11_0 */ 0b0000'0010'0000, Extensions::RV32I);
+rvdash::I_Instruction  SLTI(/* Opcode */ 0b001'0011, /* Funct3 */ 0b010, Extensions::RV32I);
+rvdash::I_Instruction SLTIU(/* Opcode */ 0b001'0011, /* Funct3 */ 0b011, Extensions::RV32I);
 
-rvdash::I_Instruction<RV32ISz>   LB(/* Opcode */ 0b000'0011, /* Funct3 */ 0b000, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>   LH(/* Opcode */ 0b000'0011, /* Funct3 */ 0b001, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>   LW(/* Opcode */ 0b000'0011, /* Funct3 */ 0b010, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  LBU(/* Opcode */ 0b000'0011, /* Funct3 */ 0b100, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz>  LHU(/* Opcode */ 0b000'0011, /* Funct3 */ 0b101, Extensions::RV32I);
+rvdash::I_Instruction   LB(/* Opcode */ 0b000'0011, /* Funct3 */ 0b000, Extensions::RV32I);
+rvdash::I_Instruction   LH(/* Opcode */ 0b000'0011, /* Funct3 */ 0b001, Extensions::RV32I);
+rvdash::I_Instruction   LW(/* Opcode */ 0b000'0011, /* Funct3 */ 0b010, Extensions::RV32I);
+rvdash::I_Instruction  LBU(/* Opcode */ 0b000'0011, /* Funct3 */ 0b100, Extensions::RV32I);
+rvdash::I_Instruction  LHU(/* Opcode */ 0b000'0011, /* Funct3 */ 0b101, Extensions::RV32I);
 
-rvdash::S_Instruction<RV32ISz> SB(/* Opcode */ 0b010'0011, /* Funct3 */ 0b000, Extensions::RV32I);
-rvdash::S_Instruction<RV32ISz> SH(/* Opcode */ 0b010'0011, /* Funct3 */ 0b001, Extensions::RV32I);
-rvdash::S_Instruction<RV32ISz> SW(/* Opcode */ 0b010'0011, /* Funct3 */ 0b010, Extensions::RV32I);
+rvdash::S_Instruction SB(/* Opcode */ 0b010'0011, /* Funct3 */ 0b000, Extensions::RV32I);
+rvdash::S_Instruction SH(/* Opcode */ 0b010'0011, /* Funct3 */ 0b001, Extensions::RV32I);
+rvdash::S_Instruction SW(/* Opcode */ 0b010'0011, /* Funct3 */ 0b010, Extensions::RV32I);
 
-rvdash::B_Instruction<RV32ISz>  BEQ(/* Opcode */ 0b110'0011, /* Funct3 */ 0b000, Extensions::RV32I);
-rvdash::B_Instruction<RV32ISz>  BNE(/* Opcode */ 0b110'0011, /* Funct3 */ 0b001, Extensions::RV32I);
-rvdash::B_Instruction<RV32ISz>  BLT(/* Opcode */ 0b110'0011, /* Funct3 */ 0b100, Extensions::RV32I);
-rvdash::B_Instruction<RV32ISz>  BGE(/* Opcode */ 0b110'0011, /* Funct3 */ 0b101, Extensions::RV32I);
-rvdash::B_Instruction<RV32ISz> BLTU(/* Opcode */ 0b110'0011, /* Funct3 */ 0b110, Extensions::RV32I);
-rvdash::B_Instruction<RV32ISz> BGEU(/* Opcode */ 0b110'0011, /* Funct3 */ 0b111, Extensions::RV32I);
+rvdash::B_Instruction  BEQ(/* Opcode */ 0b110'0011, /* Funct3 */ 0b000, Extensions::RV32I);
+rvdash::B_Instruction  BNE(/* Opcode */ 0b110'0011, /* Funct3 */ 0b001, Extensions::RV32I);
+rvdash::B_Instruction  BLT(/* Opcode */ 0b110'0011, /* Funct3 */ 0b100, Extensions::RV32I);
+rvdash::B_Instruction  BGE(/* Opcode */ 0b110'0011, /* Funct3 */ 0b101, Extensions::RV32I);
+rvdash::B_Instruction BLTU(/* Opcode */ 0b110'0011, /* Funct3 */ 0b110, Extensions::RV32I);
+rvdash::B_Instruction BGEU(/* Opcode */ 0b110'0011, /* Funct3 */ 0b111, Extensions::RV32I);
 
-rvdash::J_Instruction<RV32ISz>  JAL(/* Opcode */ 0b110'1111, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz> JALR(/* Opcode */ 0b110'0111, /* Funct3 */ 0b000, Extensions::RV32I);
+rvdash::J_Instruction  JAL(/* Opcode */ 0b110'1111, Extensions::RV32I);
+rvdash::I_Instruction JALR(/* Opcode */ 0b110'0111, /* Funct3 */ 0b000, Extensions::RV32I);
 
-rvdash::U_Instruction<RV32ISz>   LUI(/* Opcode */ 0b011'0111, Extensions::RV32I);
-rvdash::U_Instruction<RV32ISz> AUIPC(/* Opcode */ 0b001'0111, Extensions::RV32I);
+rvdash::U_Instruction   LUI(/* Opcode */ 0b011'0111, Extensions::RV32I);
+rvdash::U_Instruction AUIPC(/* Opcode */ 0b001'0111, Extensions::RV32I);
 
-rvdash::I_Instruction<RV32ISz>  ECALL(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b0, Extensions::RV32I);
-rvdash::I_Instruction<RV32ISz> EBREAK(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b1, Extensions::RV32I);
+rvdash::I_Instruction  ECALL(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b0, Extensions::RV32I);
+rvdash::I_Instruction EBREAK(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b1, Extensions::RV32I);
 
 //---------------------------------RV32IInstrDecoder-------------------------------------
 
-std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::tryDecode(Register Instr) const {
-  auto Opcode = rvdash::R_Instruction<RV32ISz>::extractOpcode(Instr);
-  auto Funct3 = rvdash::R_Instruction<RV32ISz>::extractFunct3(Instr);
-  auto Funct7 = rvdash::R_Instruction<RV32ISz>::extractFunct7(Instr);
+std::optional<std::shared_ptr<rvdash::Instruction>> RV32IInstrDecoder::tryDecode(Register<Instruction::Sz> Instr) const {
+  auto Opcode = rvdash::Instruction::extractOpcode(Instr);
+  auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
+  auto Funct7 = rvdash::Instruction::extractFunct7(Instr);
 
   // R_Instruction
   if (Opcode == 0b011'0011) {
     if (Funct7 == 0b010'0000) {
       switch (Funct3) {
         case (0b000):
-          return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SUB, Instr);
+          return std::make_shared<rvdash::R_Instruction>(SUB, Instr);
         case (0b101):
-          return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SRA, Instr);
+          return std::make_shared<rvdash::R_Instruction>(SRA, Instr);
         default:
           return std::nullopt;
       }
@@ -118,21 +118,21 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
       return std::nullopt;
     switch (Funct3) {
       case (0b000):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(ADD, Instr);
+        return std::make_shared<rvdash::R_Instruction>(ADD, Instr);
       case (0b100):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(XOR, Instr);
+        return std::make_shared<rvdash::R_Instruction>(XOR, Instr);
       case (0b110):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(OR, Instr); 
+        return std::make_shared<rvdash::R_Instruction>(OR, Instr); 
       case (0b111):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(AND, Instr);
+        return std::make_shared<rvdash::R_Instruction>(AND, Instr);
       case (0b001):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SLL, Instr);
+        return std::make_shared<rvdash::R_Instruction>(SLL, Instr);
       case (0b101):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SRL, Instr);
+        return std::make_shared<rvdash::R_Instruction>(SRL, Instr);
       case (0b010):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SLT, Instr);
+        return std::make_shared<rvdash::R_Instruction>(SLT, Instr);
       case (0b011):
-        return std::make_shared<rvdash::R_Instruction<RV32ISz>>(SLTU, Instr);
+        return std::make_shared<rvdash::R_Instruction>(SLTU, Instr);
       default:
         return std::nullopt;
     }
@@ -141,37 +141,37 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
   else if (Opcode == 0b001'0011) {
     switch (Funct3) {
       case (0b000):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(ADDI, Instr);
+        return std::make_shared<rvdash::I_Instruction>(ADDI, Instr);
       case (0b100):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(XORI, Instr);
+        return std::make_shared<rvdash::I_Instruction>(XORI, Instr);
       case (0b110):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(ORI, Instr); 
+        return std::make_shared<rvdash::I_Instruction>(ORI, Instr); 
       case (0b111):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(ANDI, Instr);
+        return std::make_shared<rvdash::I_Instruction>(ANDI, Instr);
       case (0b001): {
-        auto Imm = rvdash::R_Instruction<RV32ISz>::extractImm_11_0(Instr);
+        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
         switch (Imm) {
           case (0b0): 
-            return std::make_shared<rvdash::I_Instruction<RV32ISz>>(SLLI, Instr);
+            return std::make_shared<rvdash::I_Instruction>(SLLI, Instr);
           default:
             return std::nullopt;
         }
       }
       case (0b101): {
-        auto Imm = rvdash::R_Instruction<RV32ISz>::extractImm_11_0(Instr);
+        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
         switch (Imm) {
           case (0b0): 
-            return std::make_shared<rvdash::I_Instruction<RV32ISz>>(SRLI, Instr);
+            return std::make_shared<rvdash::I_Instruction>(SRLI, Instr);
           case (0b0000'0010'0000): 
-            return std::make_shared<rvdash::I_Instruction<RV32ISz>>(SRAI, Instr);
+            return std::make_shared<rvdash::I_Instruction>(SRAI, Instr);
           default:
             return std::nullopt;
         }
        }
       case (0b010):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(SLTI, Instr);
+        return std::make_shared<rvdash::I_Instruction>(SLTI, Instr);
       case (0b011):
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(SLTIU, Instr);
+        return std::make_shared<rvdash::I_Instruction>(SLTIU, Instr);
       default: 
         return std::nullopt;
     }
@@ -180,15 +180,15 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
   else if (Opcode == 0b000'0011) {
     switch (Funct3) {
       case 0b000:
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(LB, Instr);
+        return std::make_shared<rvdash::I_Instruction>(LB, Instr);
       case 0b001:
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(LH, Instr);
+        return std::make_shared<rvdash::I_Instruction>(LH, Instr);
       case 0b010:
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(LW, Instr);
+        return std::make_shared<rvdash::I_Instruction>(LW, Instr);
       case 0b100:
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(LBU, Instr);
+        return std::make_shared<rvdash::I_Instruction>(LBU, Instr);
       case 0b101:
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(LHU, Instr);
+        return std::make_shared<rvdash::I_Instruction>(LHU, Instr);
       default: 
         return std::nullopt;
     }
@@ -197,17 +197,17 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
   else if (Opcode == 0b110'0011) {
     switch (Funct3) {
       case 0b000:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BEQ, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BEQ, Instr);
       case 0b001:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BNE, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BNE, Instr);
       case 0b100:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BLT, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BLT, Instr);
       case 0b101:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BGE, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BGE, Instr);
       case 0b110:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BLTU, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BLTU, Instr);
       case 0b111:
-        return std::make_shared<rvdash::B_Instruction<RV32ISz>>(BGEU, Instr);
+        return std::make_shared<rvdash::B_Instruction>(BGEU, Instr);
       default: 
         return std::nullopt;
     }
@@ -216,32 +216,32 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
   else if (Opcode == 0b010'0011) {
     switch (Funct3) {
       case 0b000:
-        return std::make_shared<rvdash::S_Instruction<RV32ISz>>(SB, Instr);
+        return std::make_shared<rvdash::S_Instruction>(SB, Instr);
       case 0b001:
-        return std::make_shared<rvdash::S_Instruction<RV32ISz>>(SH, Instr);
+        return std::make_shared<rvdash::S_Instruction>(SH, Instr);
       case 0b010:
-        return std::make_shared<rvdash::S_Instruction<RV32ISz>>(SW, Instr);
+        return std::make_shared<rvdash::S_Instruction>(SW, Instr);
       default: 
         return std::nullopt;
     }
   }
   // LUI (U_Instruction)
   else if (Opcode == 0b011'0111) {
-    return std::make_shared<rvdash::U_Instruction<RV32ISz>>(LUI, Instr);
+    return std::make_shared<rvdash::U_Instruction>(LUI, Instr);
   }
   // AUIPC (U_Instruction)
   else if (Opcode == 0b001'0111) {
-    return std::make_shared<rvdash::U_Instruction<RV32ISz>>(AUIPC, Instr);
+    return std::make_shared<rvdash::U_Instruction>(AUIPC, Instr);
   }  
   // J_Instruction
   else if (Opcode == 0b110'1111) {
-    return std::make_shared<rvdash::J_Instruction<RV32ISz>>(JAL, Instr);
+    return std::make_shared<rvdash::J_Instruction>(JAL, Instr);
   } 
   // JALR (I_Instruction)
   else if (Opcode == 0b110'0111) {
     switch (Funct3) {
       case (0b000): 
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(JALR, Instr);
+        return std::make_shared<rvdash::I_Instruction>(JALR, Instr);
       default:
         return std::nullopt;
     }
@@ -250,12 +250,12 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
   else if (Opcode == 0b111'0011) {
     if (Funct3 != 0b000)
       return std::nullopt;
-    auto Imm = rvdash::R_Instruction<RV32ISz>::extractImm_11_0(Instr);
+    auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
     switch (Imm) {
       case (0b0): 
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(ECALL, Instr);
+        return std::make_shared<rvdash::I_Instruction>(ECALL, Instr);
       case (0b1): 
-        return std::make_shared<rvdash::I_Instruction<RV32ISz>>(EBREAK, Instr);
+        return std::make_shared<rvdash::I_Instruction>(EBREAK, Instr);
       default:
         return std::nullopt;
     }
@@ -265,10 +265,25 @@ std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> RV32IInstrDecoder::
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
-void RV32IInstrExecutor::execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+void RV32IInstrExecutor::execute(std::shared_ptr<Instruction> Instr) const {
   std::cout << "RV32I execute :";
   Instr->print();
-  std::cout << "\n"; 
+  std::cout << "\n";
+  
+  switch(Instr->getType()) {
+    case (InstrEncodingType::I):
+      executeI_Instr();
+    case (InstrEncodingType::S):
+      executeS_Instr();
+    case (InstrEncodingType::B):
+      executeB_Instr();
+    case (InstrEncodingType::U):
+      executeU_Instr();
+    case (InstrEncodingType::J):
+      executeJ_Instr();
+    default:
+      failWithError("Illegal instruction encoding type");
+  }
 }
 
 //----------------------------------RV32IInstrSet----------------------------------------
@@ -280,16 +295,5 @@ std::ostream& operator<<(std::ostream& stream, const typename RV32I::RV32IInstrS
 }
 
 } // namespace RV32I
-
-template <>
-bool isBaseSet<RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S) {
-  return true;
-}
-
-template <>
-std::optional<Register<RV32I::RV32ISz>*> findPC<RV32I::RV32ISz, RV32I::RV32IInstrSet>(RV32I::RV32IInstrSet S) {
-  return S.getPC();
-}
-
 } // namespace rvdash
 

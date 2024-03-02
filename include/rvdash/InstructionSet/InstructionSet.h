@@ -1,8 +1,11 @@
 #ifndef INSTRUCTION_SET_H
 #define INSTRUCTION_SET_H
 
+#include <type_traits>
+
 #include "rvdash/InstructionSet/Instruction.h"
 #include "rvdash/InstructionSet/Registers.h"
+#include "rvdash/Memory/Memory.h"
 
 
 
@@ -19,60 +22,78 @@ enum class Extensions {
   D,
 };
 
-//------------------------------------InstrSet-------------------------------------------
+//------------------------------------ExtractPC------------------------------------------
 
+template<typename ...>
+using Void_t = void;
+
+template<typename T, typename = Void_t<>>
+struct HasPc : std::false_type {};
+
+template<typename T>
+struct HasPc<T, Void_t<typename T::PcSz_t>> : std::true_type {};
+
+//Is it possible to identify a basic set by the presence of PC in it?
 template <typename Set>
 bool isBaseSet(Set S) {
+  if constexpr (HasPc<Set>::value)
+    return true;
   return false;
 }
 
-template <size_t Sz, typename Set>
-std::optional<Register<Sz>*> findPC(Set S) {
+template <size_t PcSz, typename Set>
+std::optional<Register<PcSz>*> findPC(Set S) {
+  if constexpr (HasPc<Set>::value)
+    return S.getPC();
   return std::nullopt;
 }
 
 template <size_t Sz>
 std::optional<Register<Sz>*> operator||(std::optional<Register<Sz>*> Lhs, std::optional<Register<Sz>*> Rhs) {
+  if (Lhs.has_value() && Rhs.has_value())
+    throw std::logic_error("More than one set of instructions was able to get PC");
   return Lhs.has_value() ? Lhs : Rhs;
 }
 
-// Sz means size of program counter register PC
-template <size_t Sz, typename... Exts>
+//------------------------------------InstrSet-------------------------------------------
+
+// AddrSz means size of address space and program counter register PC
+template <size_t AddrSz, typename... Exts>
 class InstrSet : private Exts... {
 
 protected:
-  Register<Sz> *PC;
+  Register<AddrSz> *PC;
+  Memory<AddrSz> &VirtualMemory;
 
 public:
  
-  InstrSet() : Exts()... { extractPC(); };
+  InstrSet(Memory<AddrSz> &Mem) : Exts()... , VirtualMemory(Mem) /*, PC(extractPC())*/ {};
 
   void extractPC() {
-    auto OptPC = (findPC<Sz>(static_cast<const Exts&>(*this)) || ...);
+    auto OptPC = (findPC<AddrSz>(static_cast<const Exts&>(*this)) || ...);
     if (!OptPC.has_value())
       throw std::logic_error("No extension returned the program counter");
     PC = OptPC.value();
   } 
   
-  void print() const {     
+  void print() const {
     std::cout << "Instruction Set:\n";
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
 
-  void execute(std::shared_ptr<Instruction<Sz>> &Instr) const {
+  void execute(std::shared_ptr<Instruction> &Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryExecute(Instr) && ...);
     if (Result)
       throw std::logic_error("Fail execution");
   }
 
-  Register<Sz> getPC() const { return *PC; }
+  Register<AddrSz> getPC() const { return *PC; }
   
-  bool isThereBase() {
+  bool isThereBase() const {
     return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
   }
 
-  
-  std::shared_ptr<Instruction<Sz>> decode(Register<Sz> Instr) const {
+  std::shared_ptr<Instruction> decode(Register<Instruction::Sz> Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
     if (!Result.has_value())
       throw std::logic_error("Illegal instruction");
@@ -83,28 +104,28 @@ public:
 
 //-------------------------------------CPU------------------------------------------------
 
-template <size_t Sz, typename... Exts>
+template <size_t AddrSz, typename... Exts>
 class CPU {
 
 private:
-  InstrSet<Sz, Exts...> ExtSet;
+  InstrSet<AddrSz, Exts...> ExtSet;
 
 public:
 
-  void add(const InstrSet<Sz, Exts...> &E) { ExtSet = E; }
-  void print()
-  {
+  CPU(const InstrSet<AddrSz, Exts...> &E) : ExtSet(std::move(E)) {};
+  
+  void print() const {
       ExtSet.print();
   }
 
-  void execute(const std::vector<Register<Sz>> &Programm) const {
-    for (const auto& Cmd : Programm) {
+  void execute(const std::vector<Register<Instruction::Sz>> &Program) const {
+    for (const auto& Cmd : Program) {
       auto Instr = ExtSet.decode(Cmd);
       ExtSet.execute(Instr);
     }
   }
 
-  std::shared_ptr<Instruction<Sz>> decode(Register<Sz> Instr) const {
+  std::shared_ptr<Instruction> decode(Register<Instruction::Sz> Instr) const {
     return ExtSet.tryDecode(Instr);
   }
 

@@ -9,15 +9,12 @@
 namespace rvdash {
 namespace M {
 
-const size_t RV32ISz = 32;
-using Register = std::bitset<RV32ISz>;
-
 //---------------------------------MInstrDecoder-----------------------------------------
 
 class MInstrDecoder {
 public:
   MInstrDecoder() {};
-  std::optional<std::shared_ptr<rvdash::Instruction<RV32ISz>>> tryDecode(Register Instr) const;
+  std::optional<std::shared_ptr<rvdash::Instruction>> tryDecode(Register<Instruction::Sz> Instr) const;
 
 };
 
@@ -27,7 +24,7 @@ class MInstrExecutor {
 
 public:
     MInstrExecutor() {};
-    void execute(std::shared_ptr<Instruction<RV32ISz>> Instr) const;
+    void execute(std::shared_ptr<Instruction> Instr) const;
 };
 
 //-----------------------------------MInstrSet-------------------------------------------
@@ -40,15 +37,15 @@ protected:
 public:
   MInstrSet() {};
 
-  ~MInstrSet() {};
+  virtual ~MInstrSet() {};
 
   void print() const { std::cout << "MInstrSet\n"; }
 
-  std::optional<std::shared_ptr<Instruction<RV32ISz>>> tryDecode(Register Instr) const {
+  std::optional<std::shared_ptr<Instruction>> tryDecode(Register<Instruction::Sz> Instr) const {
     return Decoder.tryDecode(Instr);
   }
 
-  bool tryExecute(std::shared_ptr<Instruction<RV32ISz>> Instr) const {
+  bool tryExecute(std::shared_ptr<Instruction> Instr) const {
     if (Instr->getExtension() != Extensions::M)
       return true;
     Executor.execute(Instr); 

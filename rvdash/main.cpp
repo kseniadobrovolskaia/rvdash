@@ -13,24 +13,24 @@ std::string getExtensions(const int argc, const char *argv[]) {
   return argv[1];
 }
 
-std::string getProgrammName(const int argc, const char *argv[]) {
+std::string getProgramName(const int argc, const char *argv[]) {
   if (argc < 3)
     throw std::logic_error("There are not programm file name in args");
   return argv[2];
 }
 
 template <size_t Sz>
-std::vector<Register<Sz>> putProgrammInBuffer(const std::string &ProgName) {
-  std::vector<Register<Sz>> Programm;
+std::vector<Register<Sz>> putProgramInBuffer(const std::string &ProgName) {
+  std::vector<Register<Sz>> Program;
   std::ifstream ProgFile(ProgName);
   if (!ProgFile.is_open())
     throw std::logic_error("Can't open file " + ProgName);
   
   Register<Sz> Command;
   while (ProgFile.read(reinterpret_cast<char *>(&Command), sizeof(Command)))
-    Programm.push_back(Command);
+    Program.push_back(Command);
   ProgFile.close();
-  return Programm;
+  return Program;
 }
 
 auto getSelectedInstructionSets(std::string ExStr) {
@@ -52,24 +52,23 @@ auto getSelectedInstructionSets(std::string ExStr) {
   });
   
   if (!ExStr.empty())
-    failWithError("Unsupported extensions selected" + ExStr);
+    failWithError("Unsupported extensions selected " + ExStr);
     
   return SelectedExs;
 }
 
 template <size_t Sz>
-void generateProcess(const std::string ExStr, const std::vector<Register<Sz>> &Programm) {
+void generateProcess(const std::string ExStr, const std::vector<Register<Sz>> &Program) {
   auto Extensions = getSelectedInstructionSets(ExStr);
   std::cout << "Selected Exs:\n";
   for (const auto &Ex : Extensions)
       std::cout << Ex << "\n";
   std::cout << "\n\n";
-
-  CPU<Sz, RV32I::RV32IInstrSet, M::MInstrSet> Cpu;
-  Cpu.add(InstrSet<Sz, RV32I::RV32IInstrSet, M::MInstrSet>());
+  Memory<Sz> Mem;
+  CPU<Sz, RV32I::RV32IInstrSet, M::MInstrSet> Cpu{InstrSet<Sz, RV32I::RV32IInstrSet, M::MInstrSet>(Mem)};
   Cpu.print();
 
-  Cpu.execute(Programm);
+  Cpu.execute(Program);
 }
 
 } // namespace rvdash
@@ -79,8 +78,10 @@ int main(int Argc, char const **Argv)
 {
   try {
     const unsigned SizePC = 32; 
-    auto Programm = rvdash::putProgrammInBuffer<SizePC>(rvdash::getProgrammName(Argc, Argv));
-    rvdash::generateProcess(rvdash::getExtensions(Argc, Argv), Programm);
+    auto Program = rvdash::putProgramInBuffer<SizePC>(rvdash::getProgramName(Argc, Argv));
+    auto A = rvdash::getExtensions(Argc, Argv);
+    5;
+    rvdash::generateProcess(A, Program);
   }
   catch(std::exception & ex)
   {
