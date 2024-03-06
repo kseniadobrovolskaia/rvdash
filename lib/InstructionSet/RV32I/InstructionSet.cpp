@@ -44,8 +44,8 @@ enum class Opcode {
   JALR,
   LUI,
   AUIPC,
-  ECALL,
-  EBREAK
+  // ECALL,
+  // EBREAK
 };
 
 rvdash::R_Instruction  ADD(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /* Funct7 */ 0b000'0000, Extensions::RV32I);
@@ -92,8 +92,9 @@ rvdash::I_Instruction JALR(/* Opcode */ 0b110'0111, /* Funct3 */ 0b000, Extensio
 rvdash::U_Instruction   LUI(/* Opcode */ 0b011'0111, Extensions::RV32I);
 rvdash::U_Instruction AUIPC(/* Opcode */ 0b001'0111, Extensions::RV32I);
 
-rvdash::I_Instruction  ECALL(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b0, Extensions::RV32I);
-rvdash::I_Instruction EBREAK(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b1, Extensions::RV32I);
+// rvdash::I_Instruction  ECALL(/* Opcode */ 0b111'0011, /* Funct3 */ 0b000, /*
+// Imm_11_0 */ 0b0, Extensions::RV32I); rvdash::I_Instruction EBREAK(/* Opcode
+// */ 0b111'0011, /* Funct3 */ 0b000, /* Imm_11_0 */ 0b1, Extensions::RV32I);
 
 //---------------------------------RV32IInstrDecoder-------------------------------------
 
@@ -245,21 +246,24 @@ std::optional<std::shared_ptr<rvdash::Instruction>> RV32IInstrDecoder::tryDecode
       default:
         return std::nullopt;
     }
-  } 
+  }
+  /* Not implemented yet
+
   // ECALL, EBREAK (I_Instuction)
   else if (Opcode == 0b111'0011) {
     if (Funct3 != 0b000)
       return std::nullopt;
     auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
     switch (Imm) {
-      case (0b0): 
+      case (0b0):
         return std::make_shared<rvdash::I_Instruction>(ECALL, Instr);
-      case (0b1): 
+      case (0b1):
         return std::make_shared<rvdash::I_Instruction>(EBREAK, Instr);
       default:
         return std::nullopt;
     }
   }
+  */
   return std::nullopt;
 }
 
@@ -269,22 +273,54 @@ void RV32IInstrExecutor::execute(std::shared_ptr<Instruction> Instr) const {
   std::cout << "RV32I execute :";
   Instr->print();
   std::cout << "\n";
-  
+
   switch(Instr->getType()) {
-    case (InstrEncodingType::I):
-      executeI_Instr();
-    case (InstrEncodingType::S):
-      executeS_Instr();
-    case (InstrEncodingType::B):
-      executeB_Instr();
-    case (InstrEncodingType::U):
-      executeU_Instr();
-    case (InstrEncodingType::J):
-      executeJ_Instr();
-    default:
-      failWithError("Illegal instruction encoding type");
+  case (InstrEncodingType::R):
+    executeR_Instr();
+    break;
+  case (InstrEncodingType::I):
+    executeI_Instr();
+    break;
+  case (InstrEncodingType::S):
+    executeS_Instr();
+    break;
+  case (InstrEncodingType::B):
+    executeB_Instr();
+    break;
+  case (InstrEncodingType::U):
+    executeU_Instr();
+    break;
+  case (InstrEncodingType::J):
+    executeJ_Instr();
+    break;
+  default:
+    failWithError("Illegal instruction encoding type");
   }
 }
+
+void RV32IInstrExecutor::executeR_Instr() const {
+  std::cout << "execute_R_Instr\n";
+}
+
+void RV32IInstrExecutor::executeI_Instr() const {
+  std::cout << "execute_I_Instr\n";
+};
+
+void RV32IInstrExecutor::executeS_Instr() const {
+  std::cout << "execute_S_Instr\n";
+};
+
+void RV32IInstrExecutor::executeB_Instr() const {
+  std::cout << "execute_B_Instr\n";
+};
+
+void RV32IInstrExecutor::executeU_Instr() const {
+  std::cout << "execute_U_Instr\n";
+};
+
+void RV32IInstrExecutor::executeJ_Instr() const {
+  std::cout << "execute_J_Instr\n";
+};
 
 //----------------------------------RV32IInstrSet----------------------------------------
 

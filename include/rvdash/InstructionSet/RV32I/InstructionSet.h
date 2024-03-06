@@ -24,11 +24,12 @@ class RV32IInstrExecutor {
 
 public:
   RV32IInstrExecutor() {};
-  void executeI_Instr() const{ std::cout << "execute_I_Instr\n"; };
-  void executeS_Instr() const{ std::cout << "execute_S_Instr\n"; };
-  void executeB_Instr() const{ std::cout << "execute_B_Instr\n"; };
-  void executeU_Instr() const{ std::cout << "execute_U_Instr\n"; };
-  void executeJ_Instr() const{ std::cout << "execute_J_Instr\n"; };
+  void executeR_Instr() const;
+  void executeI_Instr() const;
+  void executeS_Instr() const;
+  void executeB_Instr() const;
+  void executeU_Instr() const;
+  void executeJ_Instr() const;
 
   void execute(std::shared_ptr<Instruction> Instr) const;
 
@@ -40,8 +41,7 @@ public:
 class RV32IInstrSet {
 
 public:
-  using PcSz_t = const size_t;
-  static PcSz_t PcSz = 32;
+  static const size_t PcSz = 32;
   static const size_t RegSz = 32;
 
 protected:

@@ -24,34 +24,29 @@ enum class Extensions {
 
 //------------------------------------ExtractPC------------------------------------------
 
-template<typename ...>
-using Void_t = void;
-
-template<typename T, typename = Void_t<>>
-struct HasPc : std::false_type {};
-
-template<typename T>
-struct HasPc<T, Void_t<typename T::PcSz_t>> : std::true_type {};
+template <typename Set>
+concept HasPc = requires(Set *S) {
+  S->getPC();
+};
 
 //Is it possible to identify a basic set by the presence of PC in it?
-template <typename Set>
-bool isBaseSet(Set S) {
-  if constexpr (HasPc<Set>::value)
+template <typename Set> bool isBaseSet(Set) {
+  if constexpr (HasPc<Set>)
     return true;
   return false;
 }
 
 template <size_t PcSz, typename Set>
-std::optional<Register<PcSz>*> findPC(Set S) {
-  if constexpr (HasPc<Set>::value)
-    return S.getPC();
+std::optional<Register<PcSz> *> getPC(Set *S) {
+  if constexpr (HasPc<Set>)
+    return S->getPC();
   return std::nullopt;
 }
 
 template <size_t Sz>
 std::optional<Register<Sz>*> operator||(std::optional<Register<Sz>*> Lhs, std::optional<Register<Sz>*> Rhs) {
   if (Lhs.has_value() && Rhs.has_value())
-    throw std::logic_error("More than one set of instructions was able to get PC");
+    failWithError("More than one set of instructions was able to get PC");
   return Lhs.has_value() ? Lhs : Rhs;
 }
 
@@ -63,19 +58,25 @@ class InstrSet : private Exts... {
 
 protected:
   Register<AddrSz> *PC;
-  Memory<AddrSz> &VirtualMemory;
 
 public:
- 
-  InstrSet(Memory<AddrSz> &Mem) : Exts()... , VirtualMemory(Mem) /*, PC(extractPC())*/ {};
+  InstrSet() : Exts()... {
+    if (!isThereBase())
+      failWithError("Basic set must be specified");
+    PC = extractPC();
+  };
 
-  void extractPC() {
-    auto OptPC = (findPC<AddrSz>(static_cast<const Exts&>(*this)) || ...);
+  auto extractPC() {
+    auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) || ...);
     if (!OptPC.has_value())
-      throw std::logic_error("No extension returned the program counter");
-    PC = OptPC.value();
-  } 
-  
+      failWithError("No extension returned the program counter");
+    if (OptPC.value()->size() != AddrSz)
+      failWithError(
+          "The program counter size does not match the address space size");
+
+    return OptPC.value();
+  }
+
   void print() const {
     std::cout << "Instruction Set:\n";
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
@@ -84,11 +85,11 @@ public:
   void execute(std::shared_ptr<Instruction> &Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryExecute(Instr) && ...);
     if (Result)
-      throw std::logic_error("Fail execution");
+      failWithError("Fail execution");
   }
 
-  Register<AddrSz> getPC() const { return *PC; }
-  
+  Register<AddrSz> getProgramCounter() const { return *PC; }
+
   bool isThereBase() const {
     return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
   }
@@ -96,7 +97,7 @@ public:
   std::shared_ptr<Instruction> decode(Register<Instruction::Sz> Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
     if (!Result.has_value())
-      throw std::logic_error("Illegal instruction");
+      failWithError("Illegal instruction");
     std::cout << "Result of Decode :\n" << *Result.value() << "\n";
     return Result.value();
   }
@@ -104,16 +105,22 @@ public:
 
 //-------------------------------------CPU------------------------------------------------
 
-template <size_t AddrSz, typename... Exts>
+template <typename MemoryType, typename InstrSetType,
+          size_t AddrSz = MemoryType::getAddrSpaceSz()>
 class CPU {
 
 private:
-  InstrSet<AddrSz, Exts...> ExtSet;
+  MemoryType &VirtualMemory;
+  InstrSetType ExtSet;
 
 public:
+  CPU(MemoryType &Mem, const InstrSetType &E)
+      : VirtualMemory(Mem), ExtSet(std::move(E)) {
+    if (AddrSz > MemoryType::getAddrSpaceSz())
+      failWithError("The requested address space size exceeds the size that "
+                    "virtual memory has");
+  };
 
-  CPU(const InstrSet<AddrSz, Exts...> &E) : ExtSet(std::move(E)) {};
-  
   void print() const {
       ExtSet.print();
   }
@@ -132,11 +139,6 @@ public:
   bool isThereBase() {
     return ExtSet.isThereBase();
   }
-
-  void extractPC() {
-    ExtSet.extractPC();
-  }
-
 };
 
 } // namespace rvdash

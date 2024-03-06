@@ -166,10 +166,11 @@ public:
   Register<Sz> &getNamedRegister(const std::string &Name) {
     return NamedRegisters[Name];
   }
-  Register<Sz> getNamedRegister(const std::string &Name) const {
-    return NamedRegisters[Name];
+
+  const Register<Sz> &getNamedRegister(const std::string &Name) const {
+    return NamedRegisters.at(Name);
   }
-  
+
 private:
   unsigned Offset;
   //std::vector<std::shared_ptr<RegistersSet>> ExternalRegs;

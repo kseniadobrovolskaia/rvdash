@@ -34,7 +34,7 @@ protected:
 
 public:
   Instruction() {};
-  Instruction(InstrEncodingType T, Extensions Ext) : Type(T) {};
+  Instruction(InstrEncodingType T, Extensions Ext) : Type(T), Ex(Ext){};
   Instruction(InstrEncodingType T, Extensions Ext, std::bitset<7> O) : Type(T), Ex(Ext), Op(O) {};
   Instruction(InstrEncodingType T, Extensions Ext, std::bitset<Sz> Ins) : Type(T), Ex(Ext), Instr(Ins) {};
 
@@ -97,7 +97,6 @@ std::optional<std::shared_ptr<Instruction>> operator||(std::optional<std::shared
                                                            std::optional<std::shared_ptr<Instruction>> Rhs);
 
 //----------------------------------R_Instruction----------------------------------------
-
 
 class R_Instruction : public Instruction {
   std::bitset<5> Rd;
@@ -162,7 +161,6 @@ public:
 };
 
 //----------------------------------I_Instruction----------------------------------------
-
 
 class I_Instruction : public Instruction {
   std::bitset<5> Rd;
@@ -229,7 +227,6 @@ public:
 
 //----------------------------------S_Instruction----------------------------------------
 
-
 class S_Instruction : public Instruction {
   std::bitset<5> Imm_4_0;
   std::bitset<3> Funct3;
@@ -292,7 +289,6 @@ public:
 };
 
 //----------------------------------B_Instruction----------------------------------------
-
 
 class B_Instruction : public Instruction {
   std::bitset<1> Imm_11;
@@ -385,7 +381,6 @@ public:
 
 //----------------------------------U_Instruction----------------------------------------
 
-
 class U_Instruction : public Instruction {
   std::bitset<5> Rd;
   std::bitset<20> Imm_31_12;
@@ -432,7 +427,6 @@ public:
 };
 
 //----------------------------------J_Instruction----------------------------------------
-
 
 class J_Instruction : public Instruction {
   std::bitset<5> Rd;
@@ -498,6 +492,5 @@ public:
 };
 
 } // namespace rvdash
-
 #endif // INSTRUCTION_H
 
