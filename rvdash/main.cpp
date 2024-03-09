@@ -3,6 +3,8 @@
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
 #include "rvdash/Memory/Memory.h"
 
+#include <fstream>
+
 namespace rvdash {
 
 std::string getExtensions(const int argc, const char *argv[]) {
@@ -64,10 +66,17 @@ void generateProcess(const std::string ExStr, const std::vector<Register<Sz>> &P
   std::cout << "\n\n";
 
   Memory<Sz> Mem;
+  Mem.store(85190, 370);
 
-  auto L = Mem.load(84848, 120);
-  for (auto elem : L)
-    std::cout << elem;
+  std::bitset<32> Reg;
+  Reg.reset();
+  Reg = 16;
+  Mem.store(86080, 32, Reg);
+  Mem.store(86600, 10, std::vector<bool>{1, 0, 1, 0, 1, 0, 1, 0, 1, 0});
+
+  std::cout << "Reg<32> = " << Reg << ", sz = " << Reg.size() << "\n\n";
+  std::ofstream File("Mem.dump");
+  Mem.dump(File);
 
   InstrSet<Sz, RV32I::RV32IInstrSet, M::MInstrSet> InstructionSet;
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};

@@ -98,236 +98,71 @@ rvdash::U_Instruction AUIPC(/* Opcode */ 0b001'0111, Extensions::RV32I);
 
 //---------------------------------RV32IInstrDecoder-------------------------------------
 
-std::optional<std::shared_ptr<rvdash::Instruction>> RV32IInstrDecoder::tryDecode(Register<Instruction::Sz> Instr) const {
-  auto Opcode = rvdash::Instruction::extractOpcode(Instr);
-  auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
-  auto Funct7 = rvdash::Instruction::extractFunct7(Instr);
-
-  // R_Instruction
-  if (Opcode == 0b011'0011) {
-    if (Funct7 == 0b010'0000) {
-      switch (Funct3) {
-        case (0b000):
-          return std::make_shared<rvdash::R_Instruction>(SUB, Instr);
-        case (0b101):
-          return std::make_shared<rvdash::R_Instruction>(SRA, Instr);
-        default:
-          return std::nullopt;
-      }
-    }
-    if (Funct7 != 0b000'0000)
-      return std::nullopt;
-    switch (Funct3) {
-      case (0b000):
-        return std::make_shared<rvdash::R_Instruction>(ADD, Instr);
-      case (0b100):
-        return std::make_shared<rvdash::R_Instruction>(XOR, Instr);
-      case (0b110):
-        return std::make_shared<rvdash::R_Instruction>(OR, Instr); 
-      case (0b111):
-        return std::make_shared<rvdash::R_Instruction>(AND, Instr);
-      case (0b001):
-        return std::make_shared<rvdash::R_Instruction>(SLL, Instr);
-      case (0b101):
-        return std::make_shared<rvdash::R_Instruction>(SRL, Instr);
-      case (0b010):
-        return std::make_shared<rvdash::R_Instruction>(SLT, Instr);
-      case (0b011):
-        return std::make_shared<rvdash::R_Instruction>(SLTU, Instr);
-      default:
-        return std::nullopt;
-    }
-  } 
-  // I_Instruction without ECALL, EBREAK, JALR and loads
-  else if (Opcode == 0b001'0011) {
-    switch (Funct3) {
-      case (0b000):
-        return std::make_shared<rvdash::I_Instruction>(ADDI, Instr);
-      case (0b100):
-        return std::make_shared<rvdash::I_Instruction>(XORI, Instr);
-      case (0b110):
-        return std::make_shared<rvdash::I_Instruction>(ORI, Instr); 
-      case (0b111):
-        return std::make_shared<rvdash::I_Instruction>(ANDI, Instr);
-      case (0b001): {
-        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-        switch (Imm) {
-          case (0b0): 
-            return std::make_shared<rvdash::I_Instruction>(SLLI, Instr);
-          default:
-            return std::nullopt;
-        }
-      }
-      case (0b101): {
-        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-        switch (Imm) {
-          case (0b0): 
-            return std::make_shared<rvdash::I_Instruction>(SRLI, Instr);
-          case (0b0000'0010'0000): 
-            return std::make_shared<rvdash::I_Instruction>(SRAI, Instr);
-          default:
-            return std::nullopt;
-        }
-       }
-      case (0b010):
-        return std::make_shared<rvdash::I_Instruction>(SLTI, Instr);
-      case (0b011):
-        return std::make_shared<rvdash::I_Instruction>(SLTIU, Instr);
-      default: 
-        return std::nullopt;
-    }
-  }
-  // Loads (I_Instruction)
-  else if (Opcode == 0b000'0011) {
-    switch (Funct3) {
-      case 0b000:
-        return std::make_shared<rvdash::I_Instruction>(LB, Instr);
-      case 0b001:
-        return std::make_shared<rvdash::I_Instruction>(LH, Instr);
-      case 0b010:
-        return std::make_shared<rvdash::I_Instruction>(LW, Instr);
-      case 0b100:
-        return std::make_shared<rvdash::I_Instruction>(LBU, Instr);
-      case 0b101:
-        return std::make_shared<rvdash::I_Instruction>(LHU, Instr);
-      default: 
-        return std::nullopt;
-    }
-  }
-  // B_Instruction
-  else if (Opcode == 0b110'0011) {
-    switch (Funct3) {
-      case 0b000:
-        return std::make_shared<rvdash::B_Instruction>(BEQ, Instr);
-      case 0b001:
-        return std::make_shared<rvdash::B_Instruction>(BNE, Instr);
-      case 0b100:
-        return std::make_shared<rvdash::B_Instruction>(BLT, Instr);
-      case 0b101:
-        return std::make_shared<rvdash::B_Instruction>(BGE, Instr);
-      case 0b110:
-        return std::make_shared<rvdash::B_Instruction>(BLTU, Instr);
-      case 0b111:
-        return std::make_shared<rvdash::B_Instruction>(BGEU, Instr);
-      default: 
-        return std::nullopt;
-    }
-  }
-  // S_Instruction
-  else if (Opcode == 0b010'0011) {
-    switch (Funct3) {
-      case 0b000:
-        return std::make_shared<rvdash::S_Instruction>(SB, Instr);
-      case 0b001:
-        return std::make_shared<rvdash::S_Instruction>(SH, Instr);
-      case 0b010:
-        return std::make_shared<rvdash::S_Instruction>(SW, Instr);
-      default: 
-        return std::nullopt;
-    }
-  }
-  // LUI (U_Instruction)
-  else if (Opcode == 0b011'0111) {
-    return std::make_shared<rvdash::U_Instruction>(LUI, Instr);
-  }
-  // AUIPC (U_Instruction)
-  else if (Opcode == 0b001'0111) {
-    return std::make_shared<rvdash::U_Instruction>(AUIPC, Instr);
-  }  
-  // J_Instruction
-  else if (Opcode == 0b110'1111) {
-    return std::make_shared<rvdash::J_Instruction>(JAL, Instr);
-  } 
-  // JALR (I_Instruction)
-  else if (Opcode == 0b110'0111) {
-    switch (Funct3) {
-      case (0b000): 
-        return std::make_shared<rvdash::I_Instruction>(JALR, Instr);
-      default:
-        return std::nullopt;
-    }
-  }
-  /* Not implemented yet
-
-  // ECALL, EBREAK (I_Instuction)
-  else if (Opcode == 0b111'0011) {
-    if (Funct3 != 0b000)
-      return std::nullopt;
-    auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-    switch (Imm) {
-      case (0b0):
-        return std::make_shared<rvdash::I_Instruction>(ECALL, Instr);
-      case (0b1):
-        return std::make_shared<rvdash::I_Instruction>(EBREAK, Instr);
-      default:
-        return std::nullopt;
-    }
-  }
-  */
-  return std::nullopt;
-}
-
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
-void RV32IInstrExecutor::execute(std::shared_ptr<Instruction> Instr) const {
-  std::cout << "RV32I execute :";
-  Instr->print();
-  std::cout << "\n";
+RegistersSet<32> RV32IInstrExecutor::Registers = RegistersSet<32>();
 
-  switch(Instr->getType()) {
-  case (InstrEncodingType::R):
-    executeR_Instr();
-    break;
-  case (InstrEncodingType::I):
-    executeI_Instr();
-    break;
-  case (InstrEncodingType::S):
-    executeS_Instr();
-    break;
-  case (InstrEncodingType::B):
-    executeB_Instr();
-    break;
-  case (InstrEncodingType::U):
-    executeU_Instr();
-    break;
-  case (InstrEncodingType::J):
-    executeJ_Instr();
-    break;
-  default:
-    failWithError("Illegal instruction encoding type");
-  }
-}
-
-void RV32IInstrExecutor::executeR_Instr() const {
+void RV32IInstrExecutor::executeR_Instr(const R_Instruction &Instr, int) {
   std::cout << "execute_R_Instr\n";
 }
 
-void RV32IInstrExecutor::executeI_Instr() const {
-  std::cout << "execute_I_Instr\n";
+void RV32IInstrExecutor::executeADD(std::shared_ptr<Instruction> Instr) {
+  auto AddInstr = *static_cast<R_Instruction *>(Instr.get());
+  auto Rd = AddInstr.Rd.to_ulong();
+  auto Rs1 = AddInstr.Rs1.to_ulong();
+  auto Rs2 = AddInstr.Rs2.to_ulong();
+
+  Registers[Rd] = Registers[Rs1].to_ulong() + Registers[Rs2].to_ulong();
+
+  std::cout << "Execute ADD\n";
+  std::cout << "Rd = " << Rd << ", Rs1 = " << Rs1 << ", rs2 = " << Rs2
+            << "\n\n";
 };
 
-void RV32IInstrExecutor::executeS_Instr() const {
-  std::cout << "execute_S_Instr\n";
+void RV32IInstrExecutor::executeSUB(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SUB\n";
+};
+void RV32IInstrExecutor::executeXOR(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute XOR\n";
+};
+void RV32IInstrExecutor::executeOR(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute  OR\n";
+}
+void RV32IInstrExecutor::executeAND(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute AND\n";
+};
+void RV32IInstrExecutor::executeSLL(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SLL\n";
+};
+void RV32IInstrExecutor::executeSRL(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SRL\n";
+};
+void RV32IInstrExecutor::executeSRA(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SRA\n";
+};
+void RV32IInstrExecutor::executeSLT(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SLT\n";
+};
+void RV32IInstrExecutor::executeSLTU(std::shared_ptr<Instruction> Instr) {
+  std::cout << "Execute SLTU\n";
 };
 
-void RV32IInstrExecutor::executeB_Instr() const {
-  std::cout << "execute_B_Instr\n";
-};
+void RV32IInstrExecutor::executeI_Instr() { std::cout << "execute_I_Instr\n"; };
 
-void RV32IInstrExecutor::executeU_Instr() const {
-  std::cout << "execute_U_Instr\n";
-};
+void RV32IInstrExecutor::executeS_Instr() { std::cout << "execute_S_Instr\n"; };
 
-void RV32IInstrExecutor::executeJ_Instr() const {
-  std::cout << "execute_J_Instr\n";
-};
+void RV32IInstrExecutor::executeB_Instr() { std::cout << "execute_B_Instr\n"; };
+
+void RV32IInstrExecutor::executeU_Instr() { std::cout << "execute_U_Instr\n"; };
+
+void RV32IInstrExecutor::executeJ_Instr() { std::cout << "execute_J_Instr\n"; };
 
 //----------------------------------RV32IInstrSet----------------------------------------
 
-std::ostream& operator<<(std::ostream& stream, const typename RV32I::RV32IInstrSet& counter)
-{
-    counter.print();
-    return stream;
+std::ostream &operator<<(std::ostream &Stream,
+                         const typename RV32I::RV32IInstrSet &Set) {
+  Set.dump(Stream);
+  return Stream;
 }
 
 } // namespace RV32I

@@ -2,22 +2,14 @@
 #define REGISTER_H
 
 #include <algorithm>
-#include <typeinfo>
-#include <cstdlib>
-#include <stdio.h>
-#include <ctype.h>
-#include <fstream>
-#include <vector>
-#include <signal.h>
+#include <bitset>
+#include <iostream>
 #include <map>
 #include <memory>
-#include <string>
-#include <iostream>
-#include <unordered_map>
-#include <initializer_list>
-#include <bitset>
 #include <optional>
-#include <cstring>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include "Error.h"
 #include "magic_enum.hpp"
@@ -30,7 +22,6 @@ namespace rvdash {
 //--------------------------------------Registers----------------------------------------
 
 enum {
-  NoRegister,
   X0,
   X1,
   X2,
@@ -127,6 +118,7 @@ enum {
   F29_D,
   F30_D,
   F31_D,
+  NoRegister
 };
 
 //-----------------------------------RegistersSet----------------------------------------
@@ -143,11 +135,9 @@ template <size_t Sz>
 class RegistersSet {
 
 public:
+  RegistersSet(){};
   RegistersSet(unsigned Count) : OwnRegs(Count, NoRegister) {};
-
-  RegistersSet(RegName FirstReg, unsigned Size) : OwnRegs(Size) {
-    Offset = FirstReg;
-  };
+  RegistersSet(RegName FirstReg, unsigned Size) { Offset = FirstReg; };
 
   Register<Sz> &getRegister(RegName Reg) {
     assert(Reg - Offset < OwnRegs.size());
@@ -158,7 +148,11 @@ public:
     assert(Reg - Offset < OwnRegs.size());
     return OwnRegs[Reg - Offset];
   }
- 
+
+  Register<Sz> &operator[](unsigned RegIdx) { return OwnRegs[RegIdx]; }
+
+  Register<Sz> operator[](unsigned RegIdx) const { return OwnRegs[RegIdx]; }
+
   void addNamedRegister(const std::string &Name) {
     NamedRegisters[Name] = 0;
   }
@@ -174,7 +168,7 @@ public:
 private:
   unsigned Offset;
   //std::vector<std::shared_ptr<RegistersSet>> ExternalRegs;
-  std::vector<RegName> OwnRegs;
+  std::map<RegName, Register<Sz>> OwnRegs;
   std::unordered_map<std::string, Register<Sz>> NamedRegisters;
 
 };

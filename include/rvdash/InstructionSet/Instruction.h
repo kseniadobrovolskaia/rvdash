@@ -21,18 +21,17 @@ enum class InstrEncodingType {
   J
 };
 
-class Instruction {
-public:
+struct Instruction {
   static const short Sz = 32;
 
-protected:
   InstrEncodingType Type;
   Extensions Ex;
   
   std::bitset<Sz> Instr;
   std::bitset<7> Op;
 
-public:
+  typedef void (*FuncExecutor_t)(std::shared_ptr<Instruction>);
+
   Instruction() {};
   Instruction(InstrEncodingType T, Extensions Ext) : Type(T), Ex(Ext){};
   Instruction(InstrEncodingType T, Extensions Ext, std::bitset<7> O) : Type(T), Ex(Ext), Op(O) {};
@@ -90,22 +89,28 @@ public:
   }
 };
 
+std::ostream &operator<<(std::ostream &Stream, const Instruction &Instr);
 
-std::ostream &operator<<(std::ostream& Stream, const Instruction &Instr);
-
-std::optional<std::shared_ptr<Instruction>> operator||(std::optional<std::shared_ptr<Instruction>> Lhs,
-                                                           std::optional<std::shared_ptr<Instruction>> Rhs);
+template <typename FuncExecutor>
+std::optional<std::tuple<std::shared_ptr<Instruction>, FuncExecutor>>
+operator||(
+    std::optional<std::tuple<std::shared_ptr<Instruction>, FuncExecutor>> Lhs,
+    std::optional<std::tuple<std::shared_ptr<Instruction>, FuncExecutor>> Rhs) {
+  if (Lhs.has_value() && Rhs.has_value())
+    failWithError(
+        "More than one set of instructions was able to decode one instruction");
+  return Lhs.has_value() ? Lhs : Rhs;
+}
 
 //----------------------------------R_Instruction----------------------------------------
 
-class R_Instruction : public Instruction {
+struct R_Instruction : Instruction {
   std::bitset<5> Rd;
   std::bitset<3> Funct3;
   std::bitset<5> Rs1;
   std::bitset<5> Rs2;
   std::bitset<7> Funct7;
 
-public:
   R_Instruction(std::bitset<Sz> Ins, Extensions Ext) 
               : Instruction(InstrEncodingType::R, Ext, Ins) {
     extractAllFields();
@@ -157,12 +162,11 @@ public:
     Rs2 = extractRs2();
     Funct7 = extractFunct7();
   };
-
 };
 
 //----------------------------------I_Instruction----------------------------------------
 
-class I_Instruction : public Instruction {
+struct I_Instruction : Instruction {
   std::bitset<5> Rd;
   std::bitset<3> Funct3;
   std::bitset<5> Rs1;
@@ -222,12 +226,11 @@ public:
     Rs1 = extractRs1();
     Imm_11_0 = extractImm_11_0();
   };
-
 };
 
 //----------------------------------S_Instruction----------------------------------------
 
-class S_Instruction : public Instruction {
+struct S_Instruction : Instruction {
   std::bitset<5> Imm_4_0;
   std::bitset<3> Funct3;
   std::bitset<5> Rs1;
@@ -285,12 +288,11 @@ public:
     Rs1 = extractRs1();
     Imm_11_5 = extractImm_11_5();
   };
-
 };
 
 //----------------------------------B_Instruction----------------------------------------
 
-class B_Instruction : public Instruction {
+struct B_Instruction : Instruction {
   std::bitset<1> Imm_11;
   std::bitset<4> Imm_4_1;
   std::bitset<3> Funct3;
@@ -381,7 +383,7 @@ public:
 
 //----------------------------------U_Instruction----------------------------------------
 
-class U_Instruction : public Instruction {
+struct U_Instruction : Instruction {
   std::bitset<5> Rd;
   std::bitset<20> Imm_31_12;
 
@@ -423,12 +425,11 @@ public:
     Rd = extractRd();
     Imm_31_12 = extractImm_31_12();
   };
-
 };
 
 //----------------------------------J_Instruction----------------------------------------
 
-class J_Instruction : public Instruction {
+struct J_Instruction : Instruction {
   std::bitset<5> Rd;
   std::bitset<8> Imm_19_12;
   std::bitset<1> Imm_11;
@@ -488,7 +489,6 @@ public:
     Imm_10_1 = extractImm_10_1();
     Imm_20 = extractImm_20();
   };
-
 };
 
 } // namespace rvdash

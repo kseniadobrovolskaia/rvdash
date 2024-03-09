@@ -5,10 +5,6 @@
 
 #include "rvdash/InstructionSet/Instruction.h"
 #include "rvdash/InstructionSet/Registers.h"
-#include "rvdash/Memory/Memory.h"
-
-
-
 
 namespace rvdash {
 
@@ -82,8 +78,10 @@ public:
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
 
-  void execute(std::shared_ptr<Instruction> &Instr) const {
-    auto Result = (static_cast<const Exts&>(*this).tryExecute(Instr) && ...);
+  void execute(std::shared_ptr<Instruction> &Instr,
+               Instruction::FuncExecutor_t Func) const {
+    auto Result =
+        (static_cast<const Exts &>(*this).tryExecute(Instr, Func) && ...);
     if (Result)
       failWithError("Fail execution");
   }
@@ -94,11 +92,12 @@ public:
     return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
   }
 
-  std::shared_ptr<Instruction> decode(Register<Instruction::Sz> Instr) const {
+  std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>
+  decode(Register<Instruction::Sz> Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
     if (!Result.has_value())
       failWithError("Illegal instruction");
-    std::cout << "Result of Decode :\n" << *Result.value() << "\n";
+    std::cout << "Result of Decode :\n" << *std::get<0>(Result.value()) << "\n";
     return Result.value();
   }
 };
@@ -121,18 +120,17 @@ public:
                     "virtual memory has");
   };
 
-  void print() const {
-      ExtSet.print();
-  }
+  void print() const { ExtSet.print(); }
 
   void execute(const std::vector<Register<Instruction::Sz>> &Program) const {
     for (const auto& Cmd : Program) {
-      auto Instr = ExtSet.decode(Cmd);
-      ExtSet.execute(Instr);
+      auto [Instr, Func] = ExtSet.decode(Cmd);
+      ExtSet.execute(Instr, Func);
     }
   }
 
-  std::shared_ptr<Instruction> decode(Register<Instruction::Sz> Instr) const {
+  std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>
+  decode(Register<Instruction::Sz> Instr) const {
     return ExtSet.tryDecode(Instr);
   }
 
@@ -142,6 +140,5 @@ public:
 };
 
 } // namespace rvdash
-
 #endif // INSTRUCTION_SET_H
 
