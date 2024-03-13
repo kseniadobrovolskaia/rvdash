@@ -9,8 +9,10 @@
 namespace rvdash {
 namespace RV32I {
 
-//-----------------------------extern
-//RV32I::Instructions--------------------------------
+using FunctTypes =
+    std::variant<void (*)(std::shared_ptr<Instruction>), void (*)(int, int)>;
+
+//-----------------------------extern_RV32I::Instructions--------------------------------
 
 extern R_Instruction SUB;
 extern R_Instruction ADD;
@@ -72,15 +74,14 @@ public:
   static void executeU_Instr();
   static void executeJ_Instr();
 
-  void execute(std::shared_ptr<Instruction> Instr,
-               Instruction::FuncExecutor_t Func) const {
+  void execute(std::shared_ptr<Instruction> Instr, FunctTypes Func) const {
     std::cout << "RV32I execute :";
     Instr->print();
     std::cout << "\n";
 
     switch (Instr->getType()) {
     case (InstrEncodingType::R):
-      Func(Instr);
+      std::get<0>(Func)(Instr);
       break;
     case (InstrEncodingType::I):
       executeI_Instr();
@@ -119,8 +120,7 @@ public:
 class RV32IInstrDecoder {
 public:
   RV32IInstrDecoder(){};
-  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>,
-                           Instruction::FuncExecutor_t>>
+  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>, FunctTypes>>
   tryDecode(Register<Instruction::Sz> Instr) const {
     auto Opcode = rvdash::Instruction::extractOpcode(Instr);
     auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
@@ -343,6 +343,8 @@ protected:
   RegistersSet<RegSz> Registers;
 
 public:
+  using FunctTypes = RV32I::FunctTypes;
+
   RV32IInstrSet() : Registers(X0, X31 - X0) {
     Registers.addNamedRegister("pc");
     ++Registers.getNamedRegister("pc");
@@ -356,17 +358,16 @@ public:
 
   void print() const { dump(std::cout); }
 
-  std::optional<
-      std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>>
+  std::optional<std::tuple<std::shared_ptr<Instruction>, FunctTypes>>
   tryDecode(Register<Instruction::Sz> Instr) const {
     return Decoder.tryDecode(Instr);
   }
 
-  bool tryExecute(std::shared_ptr<Instruction> Instr,
-                  Instruction::FuncExecutor_t Func) const {
+  template <typename Variant>
+  bool tryExecute(std::shared_ptr<Instruction> Instr, Variant Functs) const {
     if (Instr->getExtension() != Extensions::RV32I)
       return true;
-    Executor.execute(Instr, Func);
+    Executor.execute(Instr, std::get<FunctTypes>(Functs));
     return false;
   }
 };

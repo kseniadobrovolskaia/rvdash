@@ -30,8 +30,6 @@ struct Instruction {
   std::bitset<Sz> Instr;
   std::bitset<7> Op;
 
-  typedef void (*FuncExecutor_t)(std::shared_ptr<Instruction>);
-
   Instruction() {};
   Instruction(InstrEncodingType T, Extensions Ext) : Type(T), Ex(Ext){};
   Instruction(InstrEncodingType T, Extensions Ext, std::bitset<7> O) : Type(T), Ex(Ext), Op(O) {};

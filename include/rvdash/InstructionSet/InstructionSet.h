@@ -2,6 +2,7 @@
 #define INSTRUCTION_SET_H
 
 #include <type_traits>
+#include <variant>
 
 #include "rvdash/InstructionSet/Instruction.h"
 #include "rvdash/InstructionSet/Registers.h"
@@ -46,6 +47,18 @@ std::optional<Register<Sz>*> operator||(std::optional<Register<Sz>*> Lhs, std::o
   return Lhs.has_value() ? Lhs : Rhs;
 }
 
+template <typename T1, typename T2>
+std::optional<std::tuple<std::shared_ptr<Instruction>, std::variant<T1, T2>>>
+operator||(std::optional<std::tuple<std::shared_ptr<Instruction>, T1>> Lhs,
+           std::optional<std::tuple<std::shared_ptr<Instruction>, T2>> Rhs) {
+  if (Lhs.has_value() && Rhs.has_value())
+    failWithError(
+        "More than one set of instructions was able to decode Instruction");
+  if (Lhs.has_value())
+    return Lhs;
+  return Rhs;
+}
+
 //------------------------------------InstrSet-------------------------------------------
 
 // AddrSz means size of address space and program counter register PC
@@ -56,6 +69,8 @@ protected:
   Register<AddrSz> *PC;
 
 public:
+  using ExecuteFunctTypes = std::variant<typename Exts::FunctTypes...>;
+
   InstrSet() : Exts()... {
     if (!isThereBase())
       failWithError("Basic set must be specified");
@@ -78,10 +93,10 @@ public:
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
 
-  void execute(std::shared_ptr<Instruction> &Instr,
-               Instruction::FuncExecutor_t Func) const {
+  template <typename Variant>
+  void execute(std::shared_ptr<Instruction> &Instr, Variant Functs) const {
     auto Result =
-        (static_cast<const Exts &>(*this).tryExecute(Instr, Func) && ...);
+        (static_cast<const Exts &>(*this).tryExecute(Instr, Functs) && ...);
     if (Result)
       failWithError("Fail execution");
   }
@@ -92,7 +107,7 @@ public:
     return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
   }
 
-  std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>
+  std::tuple<std::shared_ptr<Instruction>, ExecuteFunctTypes>
   decode(Register<Instruction::Sz> Instr) const {
     auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
     if (!Result.has_value())
@@ -129,7 +144,8 @@ public:
     }
   }
 
-  std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>
+  std::tuple<std::shared_ptr<Instruction>,
+             typename InstrSetType::ExecuteFunctTypes>
   decode(Register<Instruction::Sz> Instr) const {
     return ExtSet.tryDecode(Instr);
   }

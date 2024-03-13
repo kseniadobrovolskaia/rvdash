@@ -9,8 +9,10 @@
 namespace rvdash {
 namespace M {
 
-//-----------------------------extern
-//M::Instructions------------------------------------
+using FunctTypes =
+    std::variant<void (*)(std::shared_ptr<Instruction>), void (*)(int)>;
+
+//-----------------------------extern_M::Instructions------------------------------------
 
 extern R_Instruction MUL;
 extern R_Instruction MULH;
@@ -26,10 +28,11 @@ extern R_Instruction REMU;
 class MInstrExecutor {
 public:
   MInstrExecutor(){};
-  void execute(std::shared_ptr<Instruction> Instr,
-               Instruction::FuncExecutor_t Func) const {
+
+  void execute(std::shared_ptr<Instruction> Instr, FunctTypes Func) const {
     std::cout << "M execute: ";
-    Func(Instr);
+
+    std::get<0>(Func)(Instr);
     Instr->print();
     std::cout << "\n";
   }
@@ -44,8 +47,7 @@ public:
 class MInstrDecoder {
 public:
   MInstrDecoder(){};
-  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>,
-                           Instruction::FuncExecutor_t>>
+  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>, FunctTypes>>
   tryDecode(Register<Instruction::Sz> Instr) const {
     auto Opcode = rvdash::Instruction::extractOpcode(Instr);
     auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
@@ -65,23 +67,24 @@ protected:
   MInstrExecutor Executor;
 
 public:
+  using FunctTypes = M::FunctTypes;
+
   MInstrSet() {};
 
   virtual ~MInstrSet() {};
 
   void print() const { std::cout << "MInstrSet\n"; }
 
-  std::optional<
-      std::tuple<std::shared_ptr<Instruction>, Instruction::FuncExecutor_t>>
+  std::optional<std::tuple<std::shared_ptr<Instruction>, FunctTypes>>
   tryDecode(Register<Instruction::Sz> Instr) const {
     return Decoder.tryDecode(Instr);
   }
 
-  bool tryExecute(std::shared_ptr<Instruction> Instr,
-                  Instruction::FuncExecutor_t Func) const {
+  template <typename Variant>
+  bool tryExecute(std::shared_ptr<Instruction> Instr, Variant Functs) const {
     if (Instr->getExtension() != Extensions::M)
       return true;
-    Executor.execute(Instr, Func);
+    Executor.execute(Instr, std::get<FunctTypes>(Functs));
     return false;
   }
 };
