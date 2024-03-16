@@ -9,19 +9,19 @@
 namespace rvdash {
 namespace M {
 
-using FunctTypes =
-    std::variant<void (*)(std::shared_ptr<Instruction>), void (*)(int)>;
+template <typename InstrSetType>
+using FunctType = void (*)(Instruction, const InstrSetType &Set);
 
 //-----------------------------extern_M::Instructions------------------------------------
 
-extern R_Instruction MUL;
-extern R_Instruction MULH;
-extern R_Instruction MULSU;
-extern R_Instruction MULU;
-extern R_Instruction DIV;
-extern R_Instruction DIVU;
-extern R_Instruction REM;
-extern R_Instruction REMU;
+// extern Instruction MUL;
+// extern Instruction MULH;
+// extern Instruction MULSU;
+// extern Instruction MULU;
+// extern Instruction DIV;
+// extern Instruction DIVU;
+// extern Instruction REM;
+// extern Instruction REMU;
 
 //---------------------------------MInstrExecutor----------------------------------------
 
@@ -29,17 +29,20 @@ class MInstrExecutor {
 public:
   MInstrExecutor(){};
 
-  void execute(std::shared_ptr<Instruction> Instr, FunctTypes Func) const {
+  template <typename InstrSetType>
+  void execute(Instruction Instr, FunctType<InstrSetType> Func,
+               const InstrSetType &Set) const {
     std::cout << "M execute: ";
 
-    std::get<0>(Func)(Instr);
-    Instr->print();
+    Func(Instr, Set);
+    Instr.print();
     std::cout << "\n";
   }
 
-  static void executeMUL(std::shared_ptr<Instruction> Instr) {
+  template <typename InstrSetType>
+  static void executeMUL(Instruction Instr, const InstrSetType &Set) {
     std::cout << "Execute MUL\n\n";
-  };
+  }
 };
 
 //---------------------------------MInstrDecoder-----------------------------------------
@@ -47,14 +50,9 @@ public:
 class MInstrDecoder {
 public:
   MInstrDecoder(){};
-  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>, FunctTypes>>
+  template <typename InstrSetType>
+  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr) const {
-    auto Opcode = rvdash::Instruction::extractOpcode(Instr);
-    auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
-    auto Funct7 = rvdash::Instruction::extractFunct7(Instr);
-    if ((Opcode == 0b000'0000) && (Funct3 == 0b000) && (Funct7 == 0b000'0000))
-      return std::tuple{std::make_shared<rvdash::R_Instruction>(MUL, Instr),
-                        &MInstrExecutor::executeMUL};
     return std::nullopt;
   }
 };
@@ -67,24 +65,24 @@ protected:
   MInstrExecutor Executor;
 
 public:
-  using FunctTypes = M::FunctTypes;
-
   MInstrSet() {};
 
   virtual ~MInstrSet() {};
 
   void print() const { std::cout << "MInstrSet\n"; }
 
-  std::optional<std::tuple<std::shared_ptr<Instruction>, FunctTypes>>
-  tryDecode(Register<Instruction::Sz> Instr) const {
-    return Decoder.tryDecode(Instr);
+  template <typename InstrSetType>
+  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  tryDecode(Register<Instruction::Sz> Instr, const InstrSetType &Set) const {
+    return Decoder.tryDecode<InstrSetType>(Instr);
   }
 
-  template <typename Variant>
-  bool tryExecute(std::shared_ptr<Instruction> Instr, Variant Functs) const {
-    if (Instr->getExtension() != Extensions::M)
+  template <typename InstrSetType>
+  bool tryExecute(Instruction Instr, FunctType<InstrSetType> Funct,
+                  const InstrSetType &Set) const {
+    if (Instr.Ex != Extensions::M)
       return true;
-    Executor.execute(Instr, std::get<FunctTypes>(Functs));
+    Executor.execute(Instr, Funct, Set);
     return false;
   }
 };

@@ -16,7 +16,9 @@ template <unsigned PageSz> struct Page {
   unsigned long long FirstAddr;
   mutable std::bitset<PageSz> Space;
 
-  Page(unsigned long long First) : FirstAddr(First){};
+  Page(unsigned long long First) : FirstAddr(First) {
+    Space = 0;
+  };
 
   unsigned size() const { return PageSz; }
 
@@ -192,11 +194,13 @@ public:
     setBits(Addr, std::vector<bool>(Size, 1));
   }
 
-  bool isAllocated(unsigned long long Addr, unsigned long long Size) const {
+  bool isAllocated(unsigned long long Addr, unsigned long long Sz) const {
+    long long Size = Sz;
     for (auto Page = Pages.cbegin(); Page < Pages.cend() && Size > 0; ++Page) {
-      if ((*Page).FirstAddr <= Addr && Addr < (*Page).FirstAddr + PageSz) {
-        Size -= (*Page).FirstAddr + PageSz - Addr;
-        Addr = (*Page).FirstAddr + PageSz;
+      auto First = (*Page).FirstAddr;
+      if ((First <= Addr) && (Addr < (First + PageSz))) {
+        Size -= (First + PageSz - Addr);
+        Addr = First + PageSz;
       }
     }
     return Size <= 0;

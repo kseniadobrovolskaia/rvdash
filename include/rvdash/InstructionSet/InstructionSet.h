@@ -7,7 +7,14 @@
 #include "rvdash/InstructionSet/Instruction.h"
 #include "rvdash/InstructionSet/Registers.h"
 
+
+
+
 namespace rvdash {
+
+namespace RV32I {
+extern Instruction EBREAK;
+}
 
 //------------------------------------Extensions-----------------------------------------
 
@@ -41,16 +48,16 @@ std::optional<Register<PcSz> *> getPC(Set *S) {
 }
 
 template <size_t Sz>
-std::optional<Register<Sz>*> operator||(std::optional<Register<Sz>*> Lhs, std::optional<Register<Sz>*> Rhs) {
+std::optional<Register<Sz>*> operator^(std::optional<Register<Sz>*> Lhs, std::optional<Register<Sz>*> Rhs) {
   if (Lhs.has_value() && Rhs.has_value())
     failWithError("More than one set of instructions was able to get PC");
   return Lhs.has_value() ? Lhs : Rhs;
 }
 
-template <typename T1, typename T2>
-std::optional<std::tuple<std::shared_ptr<Instruction>, std::variant<T1, T2>>>
-operator||(std::optional<std::tuple<std::shared_ptr<Instruction>, T1>> Lhs,
-           std::optional<std::tuple<std::shared_ptr<Instruction>, T2>> Rhs) {
+template <typename T1>
+std::optional<std::tuple<Instruction, T1>>
+operator^(std::optional<std::tuple<Instruction, T1>> Lhs,
+          std::optional<std::tuple<Instruction, T1>> Rhs) {
   if (Lhs.has_value() && Rhs.has_value())
     failWithError(
         "More than one set of instructions was able to decode Instruction");
@@ -62,23 +69,24 @@ operator||(std::optional<std::tuple<std::shared_ptr<Instruction>, T1>> Lhs,
 //------------------------------------InstrSet-------------------------------------------
 
 // AddrSz means size of address space and program counter register PC
-template <size_t AddrSz, typename... Exts>
+template <typename MemoryType, size_t AddrSz, typename... Exts>
 class InstrSet : private Exts... {
 
 protected:
   Register<AddrSz> *PC;
+  MemoryType &Memory;
 
 public:
-  using ExecuteFunctTypes = std::variant<typename Exts::FunctTypes...>;
+  using ExecuteFunctType = void (*)(Instruction, const InstrSet &Set);
 
-  InstrSet() : Exts()... {
+  InstrSet(MemoryType &Mem) : Exts()..., Memory(Mem) {
     if (!isThereBase())
-      failWithError("Basic set must be specified");
+      failWithError("One base set must be selected");
     PC = extractPC();
   };
 
   auto extractPC() {
-    auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) || ...);
+    auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) ^ ...);
     if (!OptPC.has_value())
       failWithError("No extension returned the program counter");
     if (OptPC.value()->size() != AddrSz)
@@ -93,27 +101,46 @@ public:
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
 
-  template <typename Variant>
-  void execute(std::shared_ptr<Instruction> &Instr, Variant Functs) const {
-    auto Result =
-        (static_cast<const Exts &>(*this).tryExecute(Instr, Functs) && ...);
-    if (Result)
-      failWithError("Fail execution");
-  }
-
   Register<AddrSz> getProgramCounter() const { return *PC; }
 
+  MemoryType &getMemory() const { return Memory; }
+
   bool isThereBase() const {
-    return (isBaseSet(static_cast<const Exts&>(*this)) || ...);
+    return (isBaseSet(static_cast<const Exts&>(*this)) ^ ...);
   }
 
-  std::tuple<std::shared_ptr<Instruction>, ExecuteFunctTypes>
+  std::tuple<Instruction, ExecuteFunctType>
   decode(Register<Instruction::Sz> Instr) const {
-    auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr) || ...);
+    auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr, *this) ^ ...);
     if (!Result.has_value())
       failWithError("Illegal instruction");
-    std::cout << "Result of Decode :\n" << *std::get<0>(Result.value()) << "\n";
     return Result.value();
+  }
+
+  void executeProgram(unsigned long long PcValue, MemoryType &Mem) const {
+    *PC = PcValue;
+    bool Run = true;
+    Register<Instruction::Sz> Cmd;
+    // Machine cycle
+    while (Run) { 
+      // Fetch
+      Mem.load(PC->to_ulong(), Instruction::Sz, Cmd);
+      if (isSame(Cmd, RV32I::EBREAK.Bits, /* Mask = all_ones */ -1))
+        return;
+      ++*PC;
+      // Decode
+      auto [Instr, Func] = decode(Cmd);
+      // Execute
+      execute(Instr, Func);
+    }
+  }
+
+  template <typename Variant>
+  void execute(Instruction &Instr, Variant Functs) const {
+    auto Result =
+        (static_cast<const Exts &>(*this).tryExecute(Instr, Functs, *this) && ...);
+    if (Result)
+      failWithError("Fail execution");
   }
 };
 
@@ -137,15 +164,20 @@ public:
 
   void print() const { ExtSet.print(); }
 
-  void execute(const std::vector<Register<Instruction::Sz>> &Program) const {
-    for (const auto& Cmd : Program) {
-      auto [Instr, Func] = ExtSet.decode(Cmd);
-      ExtSet.execute(Instr, Func);
+  void execute(unsigned long long Pc, const std::vector<Register<Instruction::Sz>> &Program) const {
+    if (Pc % AddrSz != 0)
+      failWithError("Unaligned PC start address");
+    unsigned long long NumStore = 0;
+    for (const auto &Cmd : Program) {
+      VirtualMemory.store(NumStore, AddrSz, Cmd);
+      NumStore += AddrSz;
     }
+    std::cout << "====================Simulation started====================\n";
+    ExtSet.executeProgram(Pc, VirtualMemory);
+    std::cout << "====================Simulation stopped====================\n";
   }
 
-  std::tuple<std::shared_ptr<Instruction>,
-             typename InstrSetType::ExecuteFunctTypes>
+  std::tuple<Instruction, typename InstrSetType::ExecuteFunctType>
   decode(Register<Instruction::Sz> Instr) const {
     return ExtSet.tryDecode(Instr);
   }

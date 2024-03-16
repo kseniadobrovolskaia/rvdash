@@ -11,5 +11,9 @@ std::ostream &operator<<(std::ostream& Stream, const Instruction &Instr) {
     return Stream;
 }
 
+bool isSame(Register<Instruction::Sz> Lhs, Register<Instruction::Sz> Rhs, std::bitset<Instruction::Sz> Mask) {
+  return (Lhs & Mask) == (Rhs & Mask); 
+}
+
 } // namespace rvdash
 

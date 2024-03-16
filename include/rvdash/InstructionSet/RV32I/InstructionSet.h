@@ -9,322 +9,298 @@
 namespace rvdash {
 namespace RV32I {
 
-using FunctTypes =
-    std::variant<void (*)(std::shared_ptr<Instruction>), void (*)(int, int)>;
+class RV32IInstrSet;
+
+template <typename InstrSetType>
+using FunctType = void (*)(Instruction, const InstrSetType &Set);
 
 //-----------------------------extern_RV32I::Instructions--------------------------------
 
-extern R_Instruction SUB;
-extern R_Instruction ADD;
-extern R_Instruction SUB;
-extern R_Instruction XOR;
-extern R_Instruction OR;
-extern R_Instruction AND;
-extern R_Instruction SLL;
-extern R_Instruction SRL;
-extern R_Instruction SRA;
-extern R_Instruction SLT;
-extern R_Instruction SLTU;
-
-extern I_Instruction ADDI;
-extern I_Instruction XORI;
-extern I_Instruction ORI;
-extern I_Instruction ANDI;
-extern I_Instruction SLLI;
-extern I_Instruction SRLI;
-extern I_Instruction SRAI;
-extern I_Instruction SLTI;
-extern I_Instruction SLTIU;
-
-extern I_Instruction LB;
-extern I_Instruction LH;
-extern I_Instruction LW;
-extern I_Instruction LBU;
-extern I_Instruction LHU;
-
-extern S_Instruction SB;
-extern S_Instruction SH;
-extern S_Instruction SW;
-
-extern B_Instruction BEQ;
-extern B_Instruction BNE;
-extern B_Instruction BLT;
-extern B_Instruction BGE;
-extern B_Instruction BLTU;
-extern B_Instruction BGEU;
-
-extern J_Instruction JAL;
-extern I_Instruction JALR;
-
-extern U_Instruction LUI;
-extern U_Instruction AUIPC;
+// extern Instruction SUB;
+extern Instruction ADD;
+// extern Instruction SUB;
+// extern Instruction XOR;
+// extern Instruction OR;
+// extern Instruction AND;
+// extern Instruction SLL;
+// extern Instruction SRL;
+// extern Instruction SRA;
+// extern Instruction SLT;
+// extern Instruction SLTU;
+//
+// extern Instruction ADDI;
+// extern Instruction XORI;
+// extern Instruction ORI;
+// extern Instruction ANDI;
+// extern Instruction SLLI;
+// extern Instruction SRLI;
+// extern Instruction SRAI;
+// extern Instruction SLTI;
+// extern Instruction SLTIU;
+//
+// extern Instruction LB;
+// extern Instruction LH;
+extern Instruction LW;
+// extern Instruction LBU;
+// extern Instruction LHU;
+//
+// extern Instruction SB;
+// extern Instruction SH;
+// extern Instruction SW;
+//
+// extern Instruction BEQ;
+// extern Instruction BNE;
+// extern Instruction BLT;
+// extern Instruction BGE;
+// extern Instruction BLTU;
+// extern Instruction BGEU;
+//
+// extern Instruction JAL;
+// extern Instruction JALR;
+//
+extern Instruction LUI;
+// extern Instruction AUIPC;
+//
+// extern Instruction ECALL;
+extern Instruction EBREAK;
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
 class RV32IInstrExecutor {
-  static RegistersSet<32> Registers;
+  static std::shared_ptr<RegistersSet<32>> Registers;
+  static std::shared_ptr<RV32IInstrExecutor> SingleExecutor;
 
 public:
-  RV32IInstrExecutor(){};
+  RV32IInstrExecutor() {};
+  RV32IInstrExecutor(std::shared_ptr<RegistersSet<32>> Regs) {
+    Registers = Regs;
+  };
+ 
+  static std::shared_ptr<RV32IInstrExecutor> getExecutorInstance(std::shared_ptr<RegistersSet<32>> Regs);
 
-  static void executeR_Instr(const R_Instruction &Instr, int);
-  static void executeI_Instr();
-  static void executeS_Instr();
-  static void executeB_Instr();
-  static void executeU_Instr();
-  static void executeJ_Instr();
-
-  void execute(std::shared_ptr<Instruction> Instr, FunctTypes Func) const {
-    std::cout << "RV32I execute :";
-    Instr->print();
-    std::cout << "\n";
-
-    switch (Instr->getType()) {
-    case (InstrEncodingType::R):
-      std::get<0>(Func)(Instr);
-      break;
-    case (InstrEncodingType::I):
-      executeI_Instr();
-      break;
-    case (InstrEncodingType::S):
-      executeS_Instr();
-      break;
-    case (InstrEncodingType::B):
-      executeB_Instr();
-      break;
-    case (InstrEncodingType::U):
-      executeU_Instr();
-      break;
-    case (InstrEncodingType::J):
-      executeJ_Instr();
-      break;
-    default:
-      failWithError("Illegal instruction encoding type");
-    }
+  template <typename InstrSetType>
+  void execute(Instruction Instr, FunctType<InstrSetType> Func,
+               const InstrSetType &Set) const {
+    Func(Instr, Set);
   }
 
-  static void executeADD(std::shared_ptr<Instruction> Instr);
-  static void executeSUB(std::shared_ptr<Instruction> Instr);
-  static void executeXOR(std::shared_ptr<Instruction> Instr);
-  static void executeOR(std::shared_ptr<Instruction> Instr);
-  static void executeAND(std::shared_ptr<Instruction> Instr);
-  static void executeSLL(std::shared_ptr<Instruction> Instr);
-  static void executeSRL(std::shared_ptr<Instruction> Instr);
-  static void executeSRA(std::shared_ptr<Instruction> Instr);
-  static void executeSLT(std::shared_ptr<Instruction> Instr);
-  static void executeSLTU(std::shared_ptr<Instruction> Instr);
+//---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeADD(Instruction Instr, const InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    auto Rs2 = Instr.extractRs2();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    auto Result = Rs1Value + Rs2Value; 
+
+    Registers->setRegister(Rd, Result);
+
+    std::cout << "Execute ADD: ";
+    std::cout << "Rd (X" << Rd << ") = " << Result << ", Rs1 (X" << Rs1 << ") = " << Rs1Value << ", Rs2 (X" << Rs2 << ") = " << Rs2Value
+              << "\n\n";
+  }
+
+  template <typename InstrSetType>
+  static void executeSUB(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeXOR(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeOR(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeAND(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLL(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSRL(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSRA(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLT(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLTU(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeADDI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeXORI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeORI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeANDI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLLI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSRLI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSRAI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLTI(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSLTIU(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeLB(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeLH(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeLW(Instruction Instr, const InstrSetType &Set) {
+    std::cout << "Execute LW: ";
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Imm = Instr.extractImm_11_0();
+    auto ResultAddr = Rs1Value + Imm;
+    Register<Instruction::Sz> Result;
+
+    Set.getMemory().load(ResultAddr, 32, Result);
+
+    Registers->setRegister(Rd, Result);
+
+    std::cout << "Rd (X" << Rd << ") = " << Result << ", Rs1 (X" << Rs1 << ") = " << Rs1Value << ", Imm = " << Imm
+              << "\n\n";
+  }
+
+  template <typename InstrSetType>
+  static void executeLBU(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeLHU(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeSB(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSH(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeSW(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeBEQ(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeBNE(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeBLT(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeBGE(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeBLTU(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeBGEU(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeJAL(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeJALR(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeLUI(Instruction Instr, const InstrSetType &Set) {
+    std::cout << "Execute LUI: ";
+    auto Rd = Instr.extractRd();
+    auto Imm = Instr.extractImm_31_12();
+
+    Registers->setRegister(Rd, Imm);
+
+    std::cout << "Rd (X" << Rd << ") = " << Imm << ", Imm = " << Imm
+              << "\n\n";
+  }
+
+  template <typename InstrSetType>
+  static void executeAUIPC(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeECALL(Instruction Instr, const InstrSetType &Set) {}
+
+  template <typename InstrSetType>
+  static void executeEBREAK(Instruction Instr, const InstrSetType &Set) {}
+
+  //---------------------------------------------------------------------------------------
+
 };
 
 //--------------------------------RV32IInstrDecoder--------------------------------------
 
 class RV32IInstrDecoder {
+
 public:
-  RV32IInstrDecoder(){};
-  std::optional<std::tuple<std::shared_ptr<rvdash::Instruction>, FunctTypes>>
+  RV32IInstrDecoder() {};
+
+  template <typename InstrSetType>
+  struct InstMapElem {
+    Instruction Instr;
+    std::bitset<Instruction::Sz> Mask;
+    FunctType<InstrSetType> Func;
+  };
+  
+  template <typename InstrSetType>
+  static std::vector<InstMapElem<InstrSetType>> registerInstrs() {
+    std::vector<InstMapElem<InstrSetType>> InstrMap;
+
+    InstrMap.emplace_back(ADD, 0xfe00707f,
+                          &RV32IInstrExecutor::executeADD<InstrSetType>);
+    InstrMap.emplace_back(LW, 0x0000707f,
+                          &RV32IInstrExecutor::executeLW<InstrSetType>);
+    InstrMap.emplace_back(LUI, 0x0000007f,
+                          &RV32IInstrExecutor::executeLUI<InstrSetType>);
+    InstrMap.emplace_back(EBREAK, 0xfff0707f,
+                          &RV32IInstrExecutor::executeEBREAK<InstrSetType>);
+    // to be continued
+
+
+    return InstrMap;
+  }
+
+  template <typename InstrSetType>
+  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr) const {
-    auto Opcode = rvdash::Instruction::extractOpcode(Instr);
-    auto Funct3 = rvdash::Instruction::extractFunct3(Instr);
-    auto Funct7 = rvdash::Instruction::extractFunct7(Instr);
+    static std::vector<InstMapElem<InstrSetType>> InstrMap = registerInstrs<InstrSetType>();
 
-    // R_Instruction
-    if (Opcode == 0b011'0011) {
-      if (Funct7 == 0b010'0000) {
-        switch (Funct3) {
-        case (0b000):
-          return std::tuple{std::make_shared<rvdash::R_Instruction>(SUB, Instr),
-                            RV32IInstrExecutor::executeSUB};
-        case (0b101):
-          return std::tuple{std::make_shared<rvdash::R_Instruction>(SRA, Instr),
-                            &RV32IInstrExecutor::executeSRA};
-        default:
-          return std::nullopt;
-        }
-      }
-      if (Funct7 != 0b000'0000)
-        return std::nullopt;
-      switch (Funct3) {
-      case (0b000):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(ADD, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b100):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(XOR, Instr),
-                          &RV32IInstrExecutor::executeXOR};
-      case (0b110):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(OR, Instr),
-                          &RV32IInstrExecutor::executeOR};
-      case (0b111):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(AND, Instr),
-                          &RV32IInstrExecutor::executeAND};
-      case (0b001):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(SLL, Instr),
-                          &RV32IInstrExecutor::executeSLL};
-      case (0b101):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(SRL, Instr),
-                          &RV32IInstrExecutor::executeSRL};
-      case (0b010):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(SLT, Instr),
-                          &RV32IInstrExecutor::executeSLT};
-      case (0b011):
-        return std::tuple{std::make_shared<rvdash::R_Instruction>(SLTU, Instr),
-                          &RV32IInstrExecutor::executeSLTU};
-      default:
-        return std::nullopt;
-      }
+    for (auto &SetInstr : InstrMap) {
+      if (isSame(Instr, SetInstr.Instr.Bits, SetInstr.Mask))
+        return std::tuple{
+            Instruction(Instr, SetInstr.Instr.Type, Extensions::RV32I),
+            SetInstr.Func};
     }
-    // I_Instruction without ECALL, EBREAK, JALR and loads
-    else if (Opcode == 0b001'0011) {
-      switch (Funct3) {
-      case (0b000):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(ADDI, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b100):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(XORI, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b110):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(ORI, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b111):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(ANDI, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b001): {
-        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-        switch (Imm) {
-        case (0b0):
-          return std::tuple{
-              std::make_shared<rvdash::I_Instruction>(SLLI, Instr),
-              &RV32IInstrExecutor::executeADD};
-        default:
-          return std::nullopt;
-        }
-      }
-      case (0b101): {
-        auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-        switch (Imm) {
-        case (0b0):
-          return std::tuple{
-              std::make_shared<rvdash::I_Instruction>(SRLI, Instr),
-              &RV32IInstrExecutor::executeADD};
-        case (0b0000'0010'0000):
-          return std::tuple{
-              std::make_shared<rvdash::I_Instruction>(SRAI, Instr),
-              &RV32IInstrExecutor::executeADD};
-        default:
-          return std::nullopt;
-        }
-      }
-      case (0b010):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(SLTI, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case (0b011):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(SLTIU, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      default:
-        return std::nullopt;
-      }
-    }
-    // Loads (I_Instruction)
-    else if (Opcode == 0b000'0011) {
-      switch (Funct3) {
-      case 0b000:
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(LB, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b001:
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(LH, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b010:
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(LW, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b100:
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(LBU, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b101:
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(LHU, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      default:
-        return std::nullopt;
-      }
-    }
-    // B_Instruction
-    else if (Opcode == 0b110'0011) {
-      switch (Funct3) {
-      case 0b000:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BEQ, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b001:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BNE, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b100:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BLT, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b101:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BGE, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b110:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BLTU, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b111:
-        return std::tuple{std::make_shared<rvdash::B_Instruction>(BGEU, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      default:
-        return std::nullopt;
-      }
-    }
-    // S_Instruction
-    else if (Opcode == 0b010'0011) {
-      switch (Funct3) {
-      case 0b000:
-        return std::tuple{std::make_shared<rvdash::S_Instruction>(SB, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b001:
-        return std::tuple{std::make_shared<rvdash::S_Instruction>(SH, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      case 0b010:
-        return std::tuple{std::make_shared<rvdash::S_Instruction>(SW, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      default:
-        return std::nullopt;
-      }
-    }
-    // LUI (U_Instruction)
-    else if (Opcode == 0b011'0111) {
-      return std::tuple{std::make_shared<rvdash::U_Instruction>(LUI, Instr),
-                        &RV32IInstrExecutor::executeADD};
-    }
-    // AUIPC (U_Instruction)
-    else if (Opcode == 0b001'0111) {
-      return std::tuple{std::make_shared<rvdash::U_Instruction>(AUIPC, Instr),
-                        &RV32IInstrExecutor::executeADD};
-    }
-    // J_Instruction
-    else if (Opcode == 0b110'1111) {
-      return std::tuple{std::make_shared<rvdash::J_Instruction>(JAL, Instr),
-                        &RV32IInstrExecutor::executeADD};
-    }
-    // JALR (I_Instruction)
-    else if (Opcode == 0b110'0111) {
-      switch (Funct3) {
-      case (0b000):
-        return std::tuple{std::make_shared<rvdash::I_Instruction>(JALR, Instr),
-                          &RV32IInstrExecutor::executeADD};
-      default:
-        return std::nullopt;
-      }
-    }
-    /* Not implemented yet
-
-    // ECALL, EBREAK (I_Instuction)
-    else if (Opcode == 0b111'0011) {
-      if (Funct3 != 0b000)
-        return std::nullopt;
-      auto Imm = rvdash::Instruction::extractImm_11_0(Instr);
-      switch (Imm) {
-        case (0b0):
-          return std::tuple{std::make_shared<rvdash::I_Instruction>(ECALL,
-    Instr), &RV32IInstrExecutor::executeADD}; case (0b1): return
-    std::tuple{std::make_shared<rvdash::I_Instruction>(EBREAK, Instr),
-    &RV32IInstrExecutor::executeADD}; default: return std::nullopt;
-      }
-    }*/
 
     return std::nullopt;
   }
@@ -338,14 +314,13 @@ public:
   static const size_t RegSz = 32;
 
 protected:
-  RV32IInstrDecoder Decoder;
-  RV32IInstrExecutor Executor;
   RegistersSet<RegSz> Registers;
+  RV32IInstrDecoder Decoder;
+  std::shared_ptr<RV32IInstrExecutor> Executor;
 
 public:
-  using FunctTypes = RV32I::FunctTypes;
 
-  RV32IInstrSet() : Registers(X0, X31 - X0) {
+  RV32IInstrSet() : Registers("X", 31), Executor(RV32IInstrExecutor::getExecutorInstance(std::make_shared<RegistersSet<RegSz>>(Registers))) {
     Registers.addNamedRegister("pc");
     ++Registers.getNamedRegister("pc");
   }
@@ -353,21 +328,24 @@ public:
   virtual ~RV32IInstrSet() {};
 
   Register<PcSz> *getPC() { return &Registers.getNamedRegister("pc"); }
-
+  
   void dump(std::ostream &Stream) const { Stream << "RV32IInstrSet\n"; }
 
   void print() const { dump(std::cout); }
 
-  std::optional<std::tuple<std::shared_ptr<Instruction>, FunctTypes>>
-  tryDecode(Register<Instruction::Sz> Instr) const {
-    return Decoder.tryDecode(Instr);
+  template <typename InstrSetType>
+  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  tryDecode(Register<Instruction::Sz> Instr,
+            const InstrSetType &MainSet) const {
+    return Decoder.tryDecode<InstrSetType>(Instr);
   }
 
-  template <typename Variant>
-  bool tryExecute(std::shared_ptr<Instruction> Instr, Variant Functs) const {
-    if (Instr->getExtension() != Extensions::RV32I)
+  template <typename InstrSetType>
+  bool tryExecute(Instruction Instr, FunctType<InstrSetType> Funct,
+                  const InstrSetType &MainSet) const {
+    if (Instr.Ex != Extensions::RV32I)
       return true;
-    Executor.execute(Instr, std::get<FunctTypes>(Functs));
+    Executor->execute(Instr, Funct, MainSet);
     return false;
   }
 };
