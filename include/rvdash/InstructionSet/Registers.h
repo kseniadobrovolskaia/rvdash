@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -35,10 +36,15 @@ class RegistersSet {
 
 public:
   RegistersSet() {};
-  RegistersSet(const char *Name, unsigned Count) : SetName(Name), OwnRegs(Count) {};
+  RegistersSet(const char *Name, unsigned Count, std::ostream &File = std::cout)
+      : SetName(Name), OwnRegs(Count), LogFile(File) {
+    OwnRegs[0] = 0;
+  };
 
   void setRegister(RegName Reg, Register<Sz> NewValue) {
     logChange(Reg, NewValue);
+    if (strcmp(SetName, "X") == 0 && Reg == 0)
+      return;
     OwnRegs.at(Reg) = NewValue;
   }
 
@@ -52,17 +58,46 @@ public:
     NamedRegisters[Name] = 0;
   }
 
-  Register<Sz> &getNamedRegister(const std::string &Name) {
-    return NamedRegisters.at(Name);
+  void setNamedRegister(const std::string &Name, Register<Sz> NewValue) {
+    logChange(Name, NewValue);
+    NamedRegisters.at(Name) = NewValue;
   }
 
   const Register<Sz> &getNamedRegister(const std::string &Name) const {
     return NamedRegisters.at(Name);
   }
 
-  void logChange(RegName Reg, Register<Sz> NewValue) const {
-    std::cout << SetName << Reg << " <- " << NewValue << "\n";
+  Register<Sz> &getNamedRegister(const std::string &Name) {
+    return NamedRegisters.at(Name);
   }
+
+  void logChange(RegName Reg, Register<Sz> NewValue) const {
+    LogFile << SetName << std::dec << Reg << " <- 0x" << std::hex
+            << NewValue.to_ulong() << "\n";
+    LogFile << std::dec;
+  }
+
+  void logChange(std::string RegName, Register<Sz> NewValue) const {
+    LogFile << RegName << " <- 0x" << std::hex << NewValue.to_ulong() << "\n";
+    LogFile << std::dec;
+  }
+
+  void dump(std::ostream &Stream) const {
+    Stream << "Registers Set:\n";
+    if (NamedRegisters.size() != 0) {
+      for (const auto &[Name, Reg] : NamedRegisters)
+        Stream << Name << " = 0x" << std::hex << Reg.to_ulong() << "\n";
+    }
+    Stream << "\nRegisters: \n";
+    for (auto Idx = 0; Idx < OwnRegs.size(); ++Idx)
+      Stream << SetName << std::dec << Idx << " = 0x" << std::hex
+             << OwnRegs[Idx].to_ulong() << "\n";
+    Stream << std::dec;
+  }
+
+  void dump() const { dump(LogFile); }
+
+  void print() const { dump(std::cout); }
 
   /*void addExternalRegSet(std::shared_ptr<RegistersSet> Set) {
     ExternalRegs.push_back(Set);
@@ -74,6 +109,7 @@ private:
   std::vector<Register<Sz>> OwnRegs;
   std::unordered_map<std::string, Register<Sz>> NamedRegisters;
 
+  std::ostream &LogFile;
 };
 
 template <size_t Sz>

@@ -8,16 +8,19 @@ namespace RV32I {
 
 rvdash::Instruction ADD(/* Instr */ 0b0000000'00000'00000'000'00000'0110011,
                         InstrEncodingType::R, Extensions::RV32I);
-// rvdash::R_Instruction  SUB(/* Opcode */ 0b011'0011, /* Funct3 */ 0b000, /*
-// Funct7 */ 0b010'0000, Extensions::RV32I); rvdash::R_Instruction  XOR(/*
-// Opcode */ 0b011'0011, /* Funct3 */ 0b100, /* Funct7 */ 0b000'0000,
-// Extensions::RV32I); rvdash::R_Instruction   OR(/* Opcode */ 0b011'0011, /*
-// Funct3 */ 0b110, /* Funct7 */ 0b000'0000, Extensions::RV32I);
-// rvdash::R_Instruction  AND(/* Opcode */ 0b011'0011, /* Funct3 */ 0b111, /*
-// Funct7 */ 0b000'0000, Extensions::RV32I); rvdash::R_Instruction  SLL(/*
-// Opcode */ 0b011'0011, /* Funct3 */ 0b001, /* Funct7 */ 0b000'0000,
-// Extensions::RV32I); rvdash::R_Instruction  SRL(/* Opcode */ 0b011'0011, /*
-// Funct3 */ 0b101, /* Funct7 */ 0b000'0000, Extensions::RV32I);
+rvdash::Instruction SUB(/* Instr */ 0b0100000'00000'00000'000'00000'0110011,
+                        InstrEncodingType::R, Extensions::RV32I);
+rvdash::Instruction XOR(/* Instr */ 0b0000000'00000'00000'100'00000'0110011,
+                        InstrEncodingType::R, Extensions::RV32I);
+rvdash::Instruction OR(/* Instr */ 0b0000000'00000'00000'110'00000'0110011,
+                       InstrEncodingType::R, Extensions::RV32I);
+rvdash::Instruction AND(/* Instr */ 0b0000000'00000'00000'111'00000'0110011,
+                        InstrEncodingType::R, Extensions::RV32I);
+rvdash::Instruction SLL(/* Instr */ 0b0000000'00000'00000'001'00000'0110011,
+                        InstrEncodingType::R, Extensions::RV32I);
+rvdash::Instruction SRL(/* Instr */ 0b0000000'00000'00000'101'00000'0110011,
+                        InstrEncodingType::R, Extensions::RV32I);
+
 // rvdash::R_Instruction  SRA(/* Opcode */ 0b011'0011, /* Funct3 */ 0b101, /*
 // Funct7 */ 0b010'0000, Extensions::RV32I); rvdash::R_Instruction  SLT(/*
 // Opcode */ 0b011'0011, /* Funct3 */ 0b010, /* Funct7 */ 0b000'0000,
@@ -38,20 +41,25 @@ rvdash::Instruction ADD(/* Instr */ 0b0000000'00000'00000'000'00000'0110011,
 // Funct3 */ 0b010, Extensions::RV32I); rvdash::I_Instruction SLTIU(/* Opcode */
 // 0b001'0011, /* Funct3 */ 0b011, Extensions::RV32I);
 //
-// rvdash::I_Instruction   LB(/* Opcode */ 0b000'0011, /* Funct3 */ 0b000,
-// Extensions::RV32I); rvdash::I_Instruction   LH(/* Opcode */ 0b000'0011, /*
-// Funct3 */ 0b001, Extensions::RV32I);
+
+rvdash::Instruction LB(/* Instr */ 0b0000000'00000'00000'000'00000'0000011,
+                       InstrEncodingType::I, Extensions::RV32I);
+rvdash::Instruction LH(/* Instr */ 0b0000000'00000'00000'001'00000'0000011,
+                       InstrEncodingType::I, Extensions::RV32I);
 rvdash::Instruction LW(/* Instr */ 0b0000000'00000'00000'010'00000'0000011,
                        InstrEncodingType::I, Extensions::RV32I);
 // rvdash::I_Instruction  LBU(/* Opcode */ 0b000'0011, /* Funct3 */ 0b100,
 // Extensions::RV32I); rvdash::I_Instruction  LHU(/* Opcode */ 0b000'0011, /*
 // Funct3 */ 0b101, Extensions::RV32I);
 //
-// rvdash::S_Instruction SB(/* Opcode */ 0b010'0011, /* Funct3 */ 0b000,
-// Extensions::RV32I); rvdash::S_Instruction SH(/* Opcode */ 0b010'0011, /*
-// Funct3 */ 0b001, Extensions::RV32I); rvdash::S_Instruction SW(/* Opcode */
-// 0b010'0011, /* Funct3 */ 0b010, Extensions::RV32I);
-//
+
+rvdash::Instruction SB(/* Instr */ 0b0000000'00000'00000'000'00000'0100011,
+                       InstrEncodingType::S, Extensions::RV32I);
+rvdash::Instruction SH(/* Instr */ 0b0000000'00000'00000'001'00000'0100011,
+                       InstrEncodingType::S, Extensions::RV32I);
+rvdash::Instruction SW(/* Instr */ 0b0000000'00000'00000'010'00000'0100011,
+                       InstrEncodingType::S, Extensions::RV32I);
+
 // rvdash::B_Instruction  BEQ(/* Opcode */ 0b110'0011, /* Funct3 */ 0b000,
 // Extensions::RV32I); rvdash::B_Instruction  BNE(/* Opcode */ 0b110'0011, /*
 // Funct3 */ 0b001, Extensions::RV32I); rvdash::B_Instruction  BLT(/* Opcode */
@@ -61,9 +69,11 @@ rvdash::Instruction LW(/* Instr */ 0b0000000'00000'00000'010'00000'0000011,
 // Extensions::RV32I); rvdash::B_Instruction BGEU(/* Opcode */ 0b110'0011, /*
 // Funct3 */ 0b111, Extensions::RV32I);
 //
-// rvdash::J_Instruction  JAL(/* Opcode */ 0b110'1111, Extensions::RV32I);
-// rvdash::I_Instruction JALR(/* Opcode */ 0b110'0111, /* Funct3 */ 0b000,
-// Extensions::RV32I);
+
+rvdash::Instruction JAL(/* Instr */ 0b0000000000000000000000000'1101111,
+                        InstrEncodingType::J, Extensions::RV32I);
+rvdash::Instruction JALR(/* Instr */ 0b000000000000'00000'000'00000'1100111,
+                         InstrEncodingType::I, Extensions::RV32I);
 //
 rvdash::Instruction LUI(/* Instr */ 0b0000000'00000'00000'000'00000'0110111,
                         InstrEncodingType::U, Extensions::RV32I);

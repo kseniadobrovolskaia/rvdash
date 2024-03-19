@@ -76,11 +76,11 @@ void generateProcess(const std::string ExStr, const std::vector<Register<Sz>> &P
 
   InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet, M::MInstrSet> InstructionSet(Mem);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
-  Cpu.print();
   Cpu.execute(0, Program);
   
   std::ofstream File("Mem.dump");
   Mem.dump(File);
+  Cpu.print();
 }
 
 } // namespace rvdash

@@ -11,6 +11,7 @@ namespace rvdash {
 enum class Extensions;
 
 //------------------------------------Instruction----------------------------------------
+// clang-format off
 //
 //                RISC_V base instruction formats (InstrEncodingType)
 //
@@ -40,6 +41,7 @@ enum class Extensions;
 //  |Imm_20|  Imm_10_1  |Imm_11 |     Imm_19_12     |       Rd       |  Opcode  | J-type
 //  |______|____________|_______|___________________|________________|__________|
 //
+// clang-format on
 
 enum class InstrEncodingType {
   R,
@@ -98,7 +100,7 @@ struct Instruction {
     return ((Bits >> 7) & std::bitset<Sz>(0x1f)).to_ulong();
   }
 
-  int16_t extractImm_11_0() const {
+  uint16_t extractImm_11_0() const {
     auto Result = ((Bits >> 20) & std::bitset<Sz>(0xfff)) << 4;
     Result = Result >> 4;
     return Result.to_ulong();
@@ -108,7 +110,7 @@ struct Instruction {
     return ((Bits >> 8) & std::bitset<Sz>(0xf)).to_ulong();
   }
 
-  uint8_t extractImm_10_1() const {
+  uint16_t extractImm_10_1() const {
     return ((Bits >> 21) & std::bitset<Sz>(0x3ff)).to_ulong();
   }
 
@@ -116,12 +118,12 @@ struct Instruction {
     return ((Bits >> 25) & std::bitset<Sz>(0x3f)).to_ulong();
   }
 
-  int16_t extractImm_11_5() const {
+  uint16_t extractImm_11_5() const {
     return ((Bits >> 25) & std::bitset<Sz>(0x3f)).to_ulong();
   }
 
   uint8_t extractImm_11() const {
-    return ((Bits >> 7) & std::bitset<Sz>(0x1)).to_ulong();
+    return ((Bits >> 20) & std::bitset<Sz>(0x1)).to_ulong();
   }
 
   uint8_t extractImm_12() const {
@@ -132,12 +134,27 @@ struct Instruction {
     return ((Bits >> 12) & std::bitset<Sz>(0xff)).to_ulong();
   }
 
-  int32_t extractImm_31_12() const {
+  uint32_t extractImm_31_12() const {
     return ((Bits >> 12) & std::bitset<Sz>(0xfffff)).to_ulong();
   }
 
   uint8_t extractImm_20() const {
     return ((Bits >> 31) & std::bitset<Sz>(0x1)).to_ulong();
+  }
+
+  uint32_t extractImm_J() const {
+    std::bitset<10> Imm_10_1 = extractImm_10_1();
+    std::bitset<1> Imm_11 = extractImm_11();
+    std::bitset<8> Imm_19_12 = extractImm_19_12();
+    std::bitset<1> Imm_20 = extractImm_20();
+    std::bitset<20> Imm;
+    for (auto Idx = 0; Idx < 10; ++Idx)
+      Imm[Idx] = Imm_10_1[Idx];
+    Imm[10] = Imm_11[0];
+    for (auto Idx = 0; Idx < 8; ++Idx)
+      Imm[Idx + 11] = Imm_19_12[Idx];
+    Imm[19] = Imm_20[0];
+    return Imm.to_ulong();
   }
 };
 

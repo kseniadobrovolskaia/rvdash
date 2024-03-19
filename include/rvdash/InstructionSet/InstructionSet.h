@@ -77,7 +77,7 @@ protected:
   MemoryType &Memory;
 
 public:
-  using ExecuteFunctType = void (*)(Instruction, const InstrSet &Set);
+  using ExecuteFunctType = void (*)(Instruction, InstrSet &Set);
 
   InstrSet(MemoryType &Mem) : Exts()..., Memory(Mem) {
     if (!isThereBase())
@@ -110,14 +110,14 @@ public:
   }
 
   std::tuple<Instruction, ExecuteFunctType>
-  decode(Register<Instruction::Sz> Instr) const {
-    auto Result = (static_cast<const Exts&>(*this).tryDecode(Instr, *this) ^ ...);
+  decode(Register<Instruction::Sz> Instr) {
+    auto Result = (static_cast<Exts &>(*this).tryDecode(Instr, *this) ^ ...);
     if (!Result.has_value())
       failWithError("Illegal instruction");
     return Result.value();
   }
 
-  void executeProgram(unsigned long long PcValue, MemoryType &Mem) const {
+  void executeProgram(unsigned long long PcValue, MemoryType &Mem) {
     *PC = PcValue;
     bool Run = true;
     Register<Instruction::Sz> Cmd;
@@ -135,10 +135,9 @@ public:
     }
   }
 
-  template <typename Variant>
-  void execute(Instruction &Instr, Variant Functs) const {
+  template <typename Variant> void execute(Instruction &Instr, Variant Functs) {
     auto Result =
-        (static_cast<const Exts &>(*this).tryExecute(Instr, Functs, *this) && ...);
+        (static_cast<Exts &>(*this).tryExecute(Instr, Functs, *this) && ...);
     if (Result)
       failWithError("Fail execution");
   }
@@ -152,11 +151,10 @@ class CPU {
 
 private:
   MemoryType &VirtualMemory;
-  InstrSetType ExtSet;
+  InstrSetType &ExtSet;
 
 public:
-  CPU(MemoryType &Mem, const InstrSetType &E)
-      : VirtualMemory(Mem), ExtSet(std::move(E)) {
+  CPU(MemoryType &Mem, InstrSetType &E) : VirtualMemory(Mem), ExtSet(E) {
     if (AddrSz > MemoryType::getAddrSpaceSz())
       failWithError("The requested address space size exceeds the size that "
                     "virtual memory has");
@@ -164,7 +162,8 @@ public:
 
   void print() const { ExtSet.print(); }
 
-  void execute(unsigned long long Pc, const std::vector<Register<Instruction::Sz>> &Program) const {
+  void execute(unsigned long long Pc,
+               const std::vector<Register<Instruction::Sz>> &Program) {
     if (Pc % AddrSz != 0)
       failWithError("Unaligned PC start address");
     unsigned long long NumStore = 0;
@@ -178,7 +177,7 @@ public:
   }
 
   std::tuple<Instruction, typename InstrSetType::ExecuteFunctType>
-  decode(Register<Instruction::Sz> Instr) const {
+  decode(Register<Instruction::Sz> Instr) {
     return ExtSet.tryDecode(Instr);
   }
 

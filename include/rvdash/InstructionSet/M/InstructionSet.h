@@ -10,7 +10,7 @@ namespace rvdash {
 namespace M {
 
 template <typename InstrSetType>
-using FunctType = void (*)(Instruction, const InstrSetType &Set);
+using FunctType = void (*)(Instruction, InstrSetType &Set);
 
 //-----------------------------extern_M::Instructions------------------------------------
 
@@ -31,7 +31,7 @@ public:
 
   template <typename InstrSetType>
   void execute(Instruction Instr, FunctType<InstrSetType> Func,
-               const InstrSetType &Set) const {
+               InstrSetType &Set) {
     std::cout << "M execute: ";
 
     Func(Instr, Set);
@@ -40,7 +40,7 @@ public:
   }
 
   template <typename InstrSetType>
-  static void executeMUL(Instruction Instr, const InstrSetType &Set) {
+  static void executeMUL(Instruction Instr, InstrSetType &Set) {
     std::cout << "Execute MUL\n\n";
   }
 };
@@ -52,7 +52,7 @@ public:
   MInstrDecoder(){};
   template <typename InstrSetType>
   std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
-  tryDecode(Register<Instruction::Sz> Instr) const {
+  tryDecode(Register<Instruction::Sz> Instr) {
     return std::nullopt;
   }
 };
@@ -73,13 +73,13 @@ public:
 
   template <typename InstrSetType>
   std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
-  tryDecode(Register<Instruction::Sz> Instr, const InstrSetType &Set) const {
+  tryDecode(Register<Instruction::Sz> Instr, InstrSetType &Set) {
     return Decoder.tryDecode<InstrSetType>(Instr);
   }
 
   template <typename InstrSetType>
   bool tryExecute(Instruction Instr, FunctType<InstrSetType> Funct,
-                  const InstrSetType &Set) const {
+                  InstrSetType &Set) {
     if (Instr.Ex != Extensions::M)
       return true;
     Executor.execute(Instr, Funct, Set);
