@@ -73,6 +73,7 @@ template <typename MemoryType, size_t AddrSz, typename... Exts>
 class InstrSet : private Exts... {
 
 protected:
+  volatile bool Stop = false;
   Register<AddrSz> *PC;
   MemoryType &Memory;
 
@@ -85,6 +86,8 @@ public:
     PC = extractPC();
   };
 
+  void stop() { Stop = true; }
+
   auto extractPC() {
     auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) ^ ...);
     if (!OptPC.has_value())
@@ -96,10 +99,12 @@ public:
     return OptPC.value();
   }
 
-  void print() const {
-    std::cout << "Instruction Set:\n";
+  void dump(std::ostream &Stream) const {
+    std::cout << "Instruction Set consist:\n";
     (std::cout << ... << static_cast<const Exts&>(*this)) << "\n";
   }
+
+  void print() const { dump(std::cout); }
 
   Register<AddrSz> getProgramCounter() const { return *PC; }
 
@@ -113,7 +118,7 @@ public:
   decode(Register<Instruction::Sz> Instr) {
     auto Result = (static_cast<Exts &>(*this).tryDecode(Instr, *this) ^ ...);
     if (!Result.has_value())
-      failWithError("Illegal instruction");
+      failWithError("Illegal instruction: " + Instr.to_string());
     return Result.value();
   }
 
@@ -125,7 +130,7 @@ public:
     while (Run) { 
       // Fetch
       Mem.load(PC->to_ulong(), Instruction::Sz, Cmd);
-      if (isSame(Cmd, RV32I::EBREAK.Bits, /* Mask = all_ones */ -1))
+      if (Stop)
         return;
       ++*PC;
       // Decode
@@ -160,17 +165,29 @@ public:
                     "virtual memory has");
   };
 
-  void print() const { ExtSet.print(); }
+  void dump(std::ostream &Stream) const {
+    Stream << "\nCPU:\n";
+    ExtSet.dump(Stream);
+    std::ofstream File("Mem.dump");
+    VirtualMemory.dump(File);
+    Stream << "Virtual memory dump in file Mem.dump\n";
+  }
+
+  void print() const { dump(std::cout); }
 
   void execute(unsigned long long Pc,
-               const std::vector<Register<Instruction::Sz>> &Program) {
+               const std::vector<Register<CHAR_BIT>> &Program) {
     if (Pc % AddrSz != 0)
       failWithError("Unaligned PC start address");
     unsigned long long NumStore = 0;
-    for (const auto &Cmd : Program) {
-      VirtualMemory.store(NumStore, AddrSz, Cmd);
-      NumStore += AddrSz;
+    for (const auto &Byte : Program) {
+      VirtualMemory.store(NumStore, CHAR_BIT, Byte);
+      NumStore += CHAR_BIT;
     }
+
+    std::ofstream File("Mem_debug.dump");
+    VirtualMemory.dump(File);
+
     std::cout << "====================Simulation started====================\n";
     ExtSet.executeProgram(Pc, VirtualMemory);
     std::cout << "====================Simulation stopped====================\n";

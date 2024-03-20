@@ -13,6 +13,26 @@ void generateInstructions(const char *FileName) {
   Instr = std::bitset<32>(0b0'0001000000'0'00000000'00000'1101111);
   File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
 
+  // ADDI (I-type) Rd = 1, Rs1 = 0, Imm = 128
+  Instr = std::bitset<32>(0b000010000000'00000'000'00001'0010011);
+  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
+
+  // JALR (I-type) Rd = 0, Imm = 0, Rs1 = 1
+  Instr = std::bitset<32>(0b000000000000'00001'000'00000'1100111);
+  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
+
+  // ADDI (I-type) Rd = 1, Rs1 = 20, Imm = -5
+  Instr = std::bitset<32>(0b111111111011'00010'000'10100'0010011);
+  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
+
+  // SW (S-type) Rs1 = 6, Rs2 = 5, Imm = 0
+  Instr = std::bitset<32>(0b0000000'00101'00110'010'00010'0100011);
+  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
+
+  // ADDI (I-type) Rd = 1, Rs1 = 21, Imm = ...
+  Instr = std::bitset<32>(0b100000001011'00010'000'10101'0010011);
+  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
+
   // LUI (U-type) Rd = 2, Imm = 5 
   Instr = std::bitset<32>(0b00000000000000000101'00010'0110111);
   File.write(reinterpret_cast<char const*>(&Instr), sizeof(Instr));
@@ -37,10 +57,6 @@ void generateInstructions(const char *FileName) {
   Instr = std::bitset<32>(0b00000000001000000000'00110'0110111);
   File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
 
-  // SW (S-type) Rs1 = 6, Rs2 = 5, Imm = 0
-  Instr = std::bitset<32>(0b0000000'00101'00110'010'00010'0100011);
-  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
-
   // LUI (U-type) Rd = 5, Imm = 8
   Instr = std::bitset<32>(0b00000000000000001000'00101'0110111);
   File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
@@ -51,10 +67,6 @@ void generateInstructions(const char *FileName) {
 
   // LUI (U-type) Rd = 1, Imm = 448
   Instr = std::bitset<32>(0b00000000000111000000'00001'0110111);
-  File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
-
-  // JALR (I-type) Rd = 0, Imm = 0, Rs1 = 1
-  Instr = std::bitset<32>(0b000000000000'00001'000'00000'1100111);
   File.write(reinterpret_cast<char const *>(&Instr), sizeof(Instr));
 
   // LW (I-type) Rd = 2, Imm = 0, Rs1 = 512
