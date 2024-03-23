@@ -54,6 +54,7 @@ enum class InstrEncodingType {
 
 struct Instruction {
   static const short Sz = 32;
+  static const short Sz_b = 4;
 
   std::bitset<Sz> Bits;
 
@@ -64,11 +65,13 @@ struct Instruction {
   Instruction(std::bitset<Sz> Ins, InstrEncodingType T, Extensions Ext)
       : Bits(Ins), Type(T), Ex(Ext){};
 
-  void print() const {
-    std::cout << "Extension: " << magic_enum::enum_name(Ex)
-              << ", Type: " << magic_enum::enum_name(Type) << "\n"
-              << "Bits: " << Bits << "\n";
+  void dump(std::ostream &Stream) const {
+    Stream << "Extension: " << magic_enum::enum_name(Ex)
+           << ", Type: " << magic_enum::enum_name(Type) << "\n"
+           << "Bits: " << Bits << "\n";
   }
+
+  void print() const { dump(std::cout); }
 
   uint8_t extractInstr() const { return Bits.to_ulong(); }
 
@@ -142,6 +145,21 @@ struct Instruction {
     return ((Bits >> 31) & std::bitset<Sz>(0x1)).to_ulong();
   }
 
+  uint32_t extractImm_B() const {
+    std::bitset<4> Imm_4_1 = extractImm_4_1();
+    std::bitset<6> Imm_10_5 = extractImm_10_5();
+    std::bitset<1> Imm_11 = extractImm_11();
+    std::bitset<1> Imm_12 = extractImm_12();
+    std::bitset<12> Imm;
+    for (auto Idx = 0; Idx < 4; ++Idx)
+      Imm[Idx] = Imm_4_1[Idx];
+    for (auto Idx = 0; Idx < 6; ++Idx)
+      Imm[Idx + 4] = Imm_10_5[Idx];
+    Imm[10] = Imm_11[0];
+    Imm[11] = Imm_12[0];
+    return Imm.to_ulong();
+  }
+
   uint32_t extractImm_J() const {
     std::bitset<10> Imm_10_1 = extractImm_10_1();
     std::bitset<1> Imm_11 = extractImm_11();
@@ -157,8 +175,6 @@ struct Instruction {
     return Imm.to_ulong();
   }
 };
-
-std::ostream &operator<<(std::ostream &Stream, const Instruction &Instr);
 
 bool isSame(Register<Instruction::Sz> Lhs, Register<Instruction::Sz> Rhs,
             std::bitset<Instruction::Sz> Mask);

@@ -9,39 +9,27 @@
 namespace rvdash {
 namespace M {
 
-template <typename InstrSetType>
-using FunctType = void (*)(Instruction, InstrSetType &Set);
-
-//-----------------------------extern_M::Instructions------------------------------------
-
-// extern Instruction MUL;
-// extern Instruction MULH;
-// extern Instruction MULSU;
-// extern Instruction MULU;
-// extern Instruction DIV;
-// extern Instruction DIVU;
-// extern Instruction REM;
-// extern Instruction REMU;
-
 //---------------------------------MInstrExecutor----------------------------------------
 
 class MInstrExecutor {
+
 public:
   MInstrExecutor(){};
 
   template <typename InstrSetType>
-  void execute(Instruction Instr, FunctType<InstrSetType> Func,
+  void execute(Instruction Instr, ExecuteFuncType<InstrSetType> Func,
                InstrSetType &Set) {
-    std::cout << "M execute: ";
+    Set.LogFile << "M execute: ";
 
     Func(Instr, Set);
-    Instr.print();
-    std::cout << "\n";
+    Instr.dump(Set.LogFile);
+    Set.LogFile << "\n";
   }
 
   template <typename InstrSetType>
   static void executeMUL(Instruction Instr, InstrSetType &Set) {
-    std::cout << "Execute MUL\n\n";
+    auto LogFile = Set.getLogFile();
+    LogFile << "Execute MUL\n\n";
   }
 };
 
@@ -51,7 +39,7 @@ class MInstrDecoder {
 public:
   MInstrDecoder(){};
   template <typename InstrSetType>
-  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  std::optional<std::tuple<Instruction, ExecuteFuncType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr) {
     return std::nullopt;
   }
@@ -65,20 +53,21 @@ protected:
   MInstrExecutor Executor;
 
 public:
-  MInstrSet() {};
+  MInstrSet() : Executor(){};
 
-  virtual ~MInstrSet() {};
+  ~MInstrSet(){};
 
-  void print() const { std::cout << "MInstrSet\n"; }
+  void dump(std::ostream &Stream) const { Stream << "MInstrSet\n"; }
+  void print() const { dump(std::cout); }
 
   template <typename InstrSetType>
-  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  std::optional<std::tuple<Instruction, ExecuteFuncType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr, InstrSetType &Set) {
     return Decoder.tryDecode<InstrSetType>(Instr);
   }
 
   template <typename InstrSetType>
-  bool tryExecute(Instruction Instr, FunctType<InstrSetType> Funct,
+  bool tryExecute(Instruction Instr, ExecuteFuncType<InstrSetType> Funct,
                   InstrSetType &Set) {
     if (Instr.Ex != Extensions::M)
       return true;

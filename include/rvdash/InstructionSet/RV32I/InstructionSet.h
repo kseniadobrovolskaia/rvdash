@@ -11,60 +11,16 @@ namespace RV32I {
 
 class RV32IInstrSet;
 
-template <typename InstrSetType>
-using FunctType = void (*)(Instruction, InstrSetType &Set);
-
-//-----------------------------extern_RV32I::Instructions--------------------------------
-
-extern Instruction ADD;
-extern Instruction SUB;
-extern Instruction XOR;
-extern Instruction OR;
-extern Instruction AND;
-extern Instruction SLL;
-extern Instruction SRL;
-extern Instruction SRA;
-extern Instruction SLT;
-extern Instruction SLTU;
-
-extern Instruction ADDI;
-extern Instruction XORI;
-extern Instruction ORI;
-extern Instruction ANDI;
-extern Instruction SLLI;
-extern Instruction SRLI;
-extern Instruction SRAI;
-extern Instruction SLTI;
-extern Instruction SLTIU;
-
-extern Instruction LB;
-extern Instruction LH;
-extern Instruction LW;
-// extern Instruction LBU;
-// extern Instruction LHU;
-
-extern Instruction SB;
-extern Instruction SH;
-extern Instruction SW;
-
-// extern Instruction BEQ;
-// extern Instruction BNE;
-// extern Instruction BLT;
-// extern Instruction BGE;
-// extern Instruction BLTU;
-// extern Instruction BGEU;
-
-extern Instruction JAL;
-extern Instruction JALR;
-
-extern Instruction LUI;
-extern Instruction AUIPC;
-
-extern Instruction ECALL;
-extern Instruction EBREAK;
+template <unsigned OldBits>
+constexpr inline int32_t signExtend(uint32_t Value) {
+  static_assert(OldBits > 0, "Bit width must be greater than 0");
+  static_assert(OldBits <= 32, "Bit width out of range");
+  return int32_t(Value << (32 - OldBits)) >> (64 - OldBits);
+}
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
+//
 class RV32IInstrExecutor {
   static std::shared_ptr<RegistersSet<32>> Registers;
   static std::shared_ptr<RV32IInstrExecutor> SingleExecutor;
@@ -78,7 +34,7 @@ public:
   static std::shared_ptr<RV32IInstrExecutor> getExecutorInstance(std::shared_ptr<RegistersSet<32>> Regs);
 
   template <typename InstrSetType>
-  void execute(Instruction Instr, FunctType<InstrSetType> Func,
+  void execute(Instruction Instr, ExecuteFuncType<InstrSetType> Func,
                InstrSetType &Set) {
     Func(Instr, Set);
   }
@@ -93,13 +49,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
     auto Result = Rs1Value + Rs2Value;
-    std::cout << "add "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "add "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -110,13 +69,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
     auto Result = Rs1Value - Rs2Value;
-    std::cout << "sub "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "sub "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -127,13 +89,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1);
     auto Rs2Value = Registers->getRegister(Rs2);
     auto Result = Rs1Value ^ Rs2Value;
-    std::cout << "xor "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "xor "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -144,13 +109,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1);
     auto Rs2Value = Registers->getRegister(Rs2);
     auto Result = Rs1Value | Rs2Value;
-    std::cout << "or "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "or "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -161,14 +129,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1);
     auto Rs2Value = Registers->getRegister(Rs2);
     auto Result = Rs1Value & Rs2Value;
-    std::cout << "and "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd)
-              << ") = " << Result.to_ulong() << ", rs1 (X" << int(Rs1)
-              << ") = " << Rs1Value.to_ulong() << ", rs2 (X" << int(Rs2)
-              << ") = " << Rs2Value.to_ulong() << "\n";
+    Set.LogFile << "and "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result.to_ulong() << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value.to_ulong() << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value.to_ulong() << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -179,14 +149,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1);
     std::bitset<5> Rs2Value = Registers->getRegister(Rs2).to_ulong();
     auto Result = Rs1Value << Rs2Value.to_ulong();
-    std::cout << "sll "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd)
-              << ") = " << Result.to_ulong() << ", rs1 (X" << int(Rs1)
-              << ") = " << Rs1Value.to_ulong() << ", rs2(lower 5 bits) (X"
-              << int(Rs2) << ") = " << Rs2Value.to_ulong() << "\n";
+    Set.LogFile << "sll "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result.to_ulong() << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value.to_ulong() << ", rs2(lower 5 bits) (X"
+                << int(Rs2) << ") = " << Rs2Value.to_ulong() << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -197,14 +169,16 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1);
     std::bitset<5> Rs2Value = Registers->getRegister(Rs2).to_ulong();
     auto Result = Rs1Value >> Rs2Value.to_ulong();
-    std::cout << "slr "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value
-              << ", rs2(lover 5 bits) (X" << int(Rs2) << ") = " << Rs2Value
-              << "\n";
+    Set.LogFile << "slr "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2(lover 5 bits) (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -216,14 +190,16 @@ public:
     std::bitset<5> Rs2Value = Registers->getRegister(Rs2).to_ulong();
     std::bitset<Instruction::Sz> Result =
         int(Rs1Value.to_ulong()) >> Rs2Value.to_ulong();
-    std::cout << "sra "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value
-              << ", rs2(lover 5 bits) (X" << int(Rs2) << ") = " << Rs2Value
-              << "\n";
+    Set.LogFile << "sra "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2(lover 5 bits) (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -234,13 +210,16 @@ public:
     int Rs1Value = Registers->getRegister(Rs1).to_ulong();
     int Rs2Value = Registers->getRegister(Rs2).to_ulong();
     bool Result = Rs1Value < Rs2Value;
-    std::cout << "slt "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, int(Result));
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "slt "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, int(Result), Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -251,13 +230,16 @@ public:
     unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     unsigned Rs2Value = Registers->getRegister(Rs2).to_ulong();
     bool Result = Rs1Value < Rs2Value;
-    std::cout << "sltu "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
-              << "\n";
-    Registers->setRegister(Rd, int(Result));
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value << ", rs2 (X"
-              << int(Rs2) << ") = " << Rs2Value << "\n";
+    Set.LogFile << "sltu "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", X" << int(Rs2)
+                << "\n";
+    Registers->setRegister(Rd, int(Result), Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << "\n";
+#endif
   }
 
   //---------------------------------------------------------------------------------------
@@ -266,62 +248,244 @@ public:
   static void executeADDI(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    if (Rd == 0 && Rs1 == 0 && Imm == 0) {
+      Set.LogFile << "nop\n";
+      return;
+    }
     int Rs1Value = Registers->getRegister(Rs1).to_ulong();
-    std::bitset<32> ImmBigger = Instr.extractImm_11_0()
-                                << (Instruction::Sz - 11);
-    int ImmSigned = ImmBigger.to_ulong();
-    int ImmSignedExtend = ImmSigned >> (Instruction::Sz - 11);
-    auto Result = Rs1Value + ImmSignedExtend;
-    std::cout << "addi "
-              << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
-              << ImmSignedExtend << "\n";
-    std::cout << std::dec;
-    Registers->setRegister(Rd, Result);
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Result
-              << ", rs1 (X" << int(Rs1) << ") = " << Rs1Value
-              << ", Imm = " << ImmSignedExtend << "\n";
+    auto Result = Rs1Value + Imm;
+    Set.LogFile << "addi "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
-  static void executeXORI(Instruction Instr, InstrSetType &Set) {}
+  static void executeXORI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Result = Rs1Value ^ Imm;
+    Set.LogFile << "xori "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeORI(Instruction Instr, InstrSetType &Set) {}
+  static void executeORI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Result = Rs1Value | Imm;
+    Set.LogFile << "ori "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeANDI(Instruction Instr, InstrSetType &Set) {}
+  static void executeANDI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Result = Rs1Value & Imm;
+    Set.LogFile << "andi "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeSLLI(Instruction Instr, InstrSetType &Set) {}
+  static void executeSLLI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    std::bitset<5> Imm = Instr.extractImm_11_0();
+    auto Result = Rs1Value << Imm.to_ulong();
+    Set.LogFile << "slli "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm.to_ulong() << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value
+                << ", Imm (lower 5 bits) = " << Imm.to_ulong() << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeSRLI(Instruction Instr, InstrSetType &Set) {}
+  static void executeSRLI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    std::bitset<5> Imm = Instr.extractImm_11_0();
+    auto Result = Rs1Value >> Imm.to_ulong();
+    Set.LogFile << "srli "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm.to_ulong() << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value
+                << ", Imm (lower 5 bits) = " << Imm.to_ulong() << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeSRAI(Instruction Instr, InstrSetType &Set) {}
+  static void executeSRAI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    std::bitset<5> Imm = Instr.extractImm_11_0();
+    auto Result = int(Rs1Value) >> Imm.to_ulong();
+    Set.LogFile << "srai "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm.to_ulong() << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value
+                << ", Imm (lower 5 bits) = " << Imm.to_ulong() << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeSLTI(Instruction Instr, InstrSetType &Set) {}
+  static void executeSLTI(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    bool Result = Rs1Value < Imm;
+    Set.LogFile << "slti "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, int(Result), Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeSLTIU(Instruction Instr, InstrSetType &Set) {}
+  static void executeSLTIU(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    unsigned Imm = Instr.extractImm_11_0();
+    unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    bool Result = Rs1Value < Imm;
+    Set.LogFile << "sltiu "
+                << "X" << int(Rd) << ", X" << int(Rs1) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, int(Result), Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   //---------------------------------------------------------------------------------------
+
+  template <typename InstrSetType>
+  static void executeLBU(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    auto ResultAddr = Rs1Value + Imm;
+    Register<Instruction::Sz> Result;
+    Set.LogFile << "lb "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().load(ResultAddr, /* Size */ 1, Result);
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
+
+  template <typename InstrSetType>
+  static void executeLHU(Instruction Instr, InstrSetType &Set) {
+    auto Rd = Instr.extractRd();
+    auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
+    auto ResultAddr = Rs1Value + Imm;
+    Register<Instruction::Sz> Result;
+    Set.LogFile << "lh "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().load(ResultAddr, /* Size */ 2, Result);
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
   static void executeLB(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
-    auto Imm = Instr.extractImm_11_0();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto ResultAddr = Rs1Value + Imm;
     Register<Instruction::Sz> Result;
-    std::cout << "lb "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().load(ResultAddr, 8, Result);
-    Registers->setRegister(Rd, Result);
+    Set.LogFile << "lb "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().load(ResultAddr, /* Size */ 1, Result);
+    Result = signExtend<CHAR_BIT>(Result.to_ulong());
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -329,15 +493,21 @@ public:
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
-    auto Imm = Instr.extractImm_11_0();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto ResultAddr = Rs1Value + Imm;
     Register<Instruction::Sz> Result;
-    std::cout << "lh "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().load(ResultAddr, 16, Result);
-    Registers->setRegister(Rd, Result);
+    Set.LogFile << "lh "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().load(ResultAddr, /* Size */ Instruction::Sz / 2, Result);
+    Result = signExtend<Instruction::Sz / 2>(Result.to_ulong());
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -345,22 +515,21 @@ public:
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
-    auto Imm = Instr.extractImm_11_0();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto ResultAddr = Rs1Value + Imm;
     Register<Instruction::Sz> Result;
-    std::cout << "lw "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().load(ResultAddr, 32, Result);
-    Registers->setRegister(Rd, Result);
+    Set.LogFile << "lw "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().load(ResultAddr, /* Size */ Instruction::Sz, Result);
+    Registers->setRegister(Rd, Result, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
+                << ") = " << Result << ", rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", Imm = " << Imm << "\n";
+#endif
   }
-
-  template <typename InstrSetType>
-  static void executeLBU(Instruction Instr, InstrSetType &Set) {}
-
-  template <typename InstrSetType>
-  static void executeLHU(Instruction Instr, InstrSetType &Set) {}
 
   //---------------------------------------------------------------------------------------
 
@@ -369,14 +538,20 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    auto Imm = Instr.extractImm_11_5();
+    int Imm = signExtend<7>(Instr.extractImm_11_5());
     auto ResultAddr = Rs1Value + Imm;
-    std::cout << "sb "
-              << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().store(ResultAddr, 8, Registers->getRegister(Rs2));
+    Set.LogFile << "sb "
+                << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().store(ResultAddr, /* Size */ 1, Registers->getRegister(Rs2),
+                          Set.LogFile);
+#ifdef DEBUG
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -384,14 +559,20 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    auto Imm = Instr.extractImm_11_5();
+    int Imm = signExtend<7>(Instr.extractImm_11_5());
     auto ResultAddr = Rs1Value + Imm;
-    std::cout << "sh "
-              << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().store(ResultAddr, 16, Registers->getRegister(Rs2));
+    Set.LogFile << "sh "
+                << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().store(ResultAddr, /* Size */ Instruction::Sz / 2,
+                          Registers->getRegister(Rs2), Set.LogFile);
+#ifdef DEBUG
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
@@ -399,75 +580,211 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    auto Imm = Instr.extractImm_11_5();
+    int Imm = signExtend<7>(Instr.extractImm_11_5());
     auto ResultAddr = Rs1Value + Imm;
-    std::cout << "sw "
-              << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    Set.getMemory().store(ResultAddr, 32, Registers->getRegister(Rs2));
+    Set.LogFile << "sw "
+                << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Set.getMemory().store(ResultAddr, /* Size */ Instruction::Sz,
+                          Registers->getRegister(Rs2), Set.LogFile);
+#ifdef DEBUG
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm = " << Imm << "\n";
+#endif
   }
 
   //---------------------------------------------------------------------------------------
 
   template <typename InstrSetType>
-  static void executeBEQ(Instruction Instr, InstrSetType &Set) {}
+  static void executeBEQ(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BEQ");
+    Set.LogFile << "beq "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value == Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeBNE(Instruction Instr, InstrSetType &Set) {}
+  static void executeBNE(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BNE");
+    Set.LogFile << "bne "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value != Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeBLT(Instruction Instr, InstrSetType &Set) {}
+  static void executeBLT(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    int Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BLT");
+    Set.LogFile << "blt "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value < Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeBGE(Instruction Instr, InstrSetType &Set) {}
+  static void executeBGE(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    int Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BGE");
+    Set.LogFile << "bge "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value >= Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeBLTU(Instruction Instr, InstrSetType &Set) {}
+  static void executeBLTU(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    unsigned Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BLTU");
+    Set.LogFile << "bltu "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value < Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   template <typename InstrSetType>
-  static void executeBGEU(Instruction Instr, InstrSetType &Set) {}
+  static void executeBGEU(Instruction Instr, InstrSetType &Set) {
+    auto Rs1 = Instr.extractRs1();
+    unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    auto Rs2 = Instr.extractRs2();
+    unsigned Rs2Value = Registers->getRegister(Rs2).to_ulong();
+    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    auto OldPc = Registers->getNamedRegister("pc");
+    auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
+    if (DistAddr % Instruction::Sz_b != 0)
+      failWithError("Misaligned BGEU");
+    Set.LogFile << "bgeu "
+                << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
+                << Imm << "\n";
+    Set.LogFile << std::dec;
+    if (Rs1Value >= Rs2Value)
+      Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
+                << ") = " << Rs1Value << ", rs2 (X" << int(Rs2)
+                << ") = " << Rs2Value << ", Imm (offset) = " << Imm << "\n";
+#endif
+  }
 
   //---------------------------------------------------------------------------------------
 
   template <typename InstrSetType>
   static void executeJAL(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    auto Imm = Instr.extractImm_J();
+    int Imm = signExtend<21>(Instr.extractImm_J() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
-    auto RdValue = OldPc.to_ulong() + Instruction::Sz;
-    auto DistAddr = Imm - Instruction::Sz;
-    Registers->setRegister(Rd, RdValue);
-    if (DistAddr % Instruction::Sz != 0)
+    auto RdValue = OldPc.to_ulong() + Instruction::Sz_b;
+    auto DistAddr = Imm - Instruction::Sz_b;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
+    if (DistAddr % Instruction::Sz_b != 0)
       failWithError("Misaligned JAL");
-    std::cout << "jal "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
-    std::cout << std::dec;
-    std::cout << "Debug: " << std::dec << "jal from " << OldPc.to_ulong()
-              << " to " << DistAddr + Instruction::Sz << "\n";
-    Registers->setNamedRegister("pc", DistAddr);
+    Set.LogFile << "jal "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "jal from " << OldPc.to_ulong()
+                << " to " << DistAddr + Instruction::Sz_b << "\n";
+#endif
   }
 
   template <typename InstrSetType>
   static void executeJALR(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    auto Imm = Instr.extractImm_11_0();
+    int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto Rs1 = Instr.extractRs1();
     auto OldPc = Registers->getNamedRegister("pc");
-    auto RdValue = OldPc.to_ulong() + Instruction::Sz;
-    auto DistAddr =
-        Imm + Registers->getRegister(Rs1).to_ulong() - Instruction::Sz;
-    Registers->setRegister(Rd, RdValue);
-    if (DistAddr % Instruction::Sz != 0)
+    auto RdValue = OldPc.to_ulong() + Instruction::Sz_b;
+    auto DistAddr = int(Imm + Registers->getRegister(Rs1).to_ulong()) / 2 * 2 -
+                    Instruction::Sz_b;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
+    if (DistAddr % Instruction::Sz_b != 0)
       failWithError("Misaligned JALR");
-    std::cout << "jalr "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
-              << std::dec << int(Rs1) << ")\n";
-    std::cout << std::dec;
-    std::cout << "Debug: " << std::dec << "jalr from " << OldPc.to_ulong()
-              << " to " << DistAddr + Instruction::Sz << "\n";
-    Registers->setNamedRegister("pc", DistAddr);
+    Set.LogFile << "jalr "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
+                << std::dec << int(Rs1) << ")\n";
+    Set.LogFile << std::dec;
+    Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "jalr from " << OldPc.to_ulong()
+                << " to " << DistAddr + Instruction::Sz_b << "\n";
+#endif
   }
 
   //---------------------------------------------------------------------------------------
@@ -475,40 +792,39 @@ public:
   template <typename InstrSetType>
   static void executeLUI(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    std::bitset<32> ImmBigger = Instr.extractImm_31_12()
-                                << (Instruction::Sz - 11);
-    int ImmSigned = ImmBigger.to_ulong();
-    int Imm = ImmSigned >> (Instruction::Sz - 11);
-    std::cout << "lui "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
-    std::cout << std::dec;
-    std::cout << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Imm
-              << ", Imm = " << Imm << "\n";
-    Registers->setRegister(Rd, Imm);
+    int Imm = signExtend<20>(Instr.extractImm_31_12());
+    Set.LogFile << "lui "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
+    Set.LogFile << std::dec;
+    Registers->setRegister(Rd, Imm, Set.LogFile);
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Imm
+                << ", Imm = " << Imm << "\n";
+#endif
   }
 
   template <typename InstrSetType>
   static void executeAUIPC(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    std::bitset<32> ImmBigger = Instr.extractImm_31_12()
-                                << (Instruction::Sz - 11);
-    int ImmSigned = ImmBigger.to_ulong();
-    int Imm = ImmSigned >> (Instruction::Sz - 11);
+    std::bitset<32> ImmBitset = Instr.extractImm_31_12() << 12;
+    auto Imm = ImmBitset.to_ulong();
     auto OldPc = Registers->getNamedRegister("pc").to_ulong();
-    auto RdValue = OldPc + Imm * Instruction::Sz;
-    Registers->setRegister(Rd, RdValue);
-    std::cout << "auipc "
-              << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
-    std::cout << std::dec;
-    std::cout << "Debug: " << std::dec << "auipc addr = " << OldPc
-              << ", Rd = " << RdValue << "\n";
+    auto RdValue = OldPc + Imm;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
+    Set.LogFile << "auipc "
+                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
+    Set.LogFile << std::dec;
+#ifdef DEBUG
+    Set.LogFile << "Debug: " << std::dec << "auipc addr = " << OldPc
+                << ", Rd = " << RdValue << "\n";
+#endif
   }
 
   //---------------------------------------------------------------------------------------
 
   template <typename InstrSetType>
   static void executeECALL(Instruction Instr, InstrSetType &Set) {
-    std::cout << "ecall";
+    Set.LogFile << "ecall";
     // In RISC-V the ecall instruction is used to do system call.
     // Calling convention for syscalls:
     //
@@ -520,19 +836,19 @@ public:
     switch (SysNum) {
     case 64: {
       auto Fd = Registers->getRegister(10).to_ulong();
-      // auto Ptr = Registers->getRegister(11).to_ulong();
-      auto Ptr = 288;
+      auto Ptr = Registers->getRegister(11).to_ulong();
       auto Size = Registers->getRegister(12).to_ulong();
-      std::cout << " write(" << Fd << ", " // 0x" << std::hex
-                << Ptr << std::dec << ", " << Size << ")\n";
-      std::bitset<13 * 8> Str;
-      Set.getMemory().load(Ptr, Size * CHAR_BIT, Str);
-      write(Fd, reinterpret_cast<const void *>(&Str), Size);
+      Set.LogFile << " write(" << Fd << ", " << Ptr << ", " << Size << ")\n";
+      std::bitset<CHAR_BIT> Str;
+      for (auto Byte = 0; Byte < Size; Byte++, Ptr++) {
+        Set.getMemory().load(Ptr, /* Size */ 1, Str);
+        write(Fd, reinterpret_cast<const void *>(&Str), 1);
+      }
       break;
     }
     case 93: {
       auto ErCode = Registers->getRegister(10).to_ulong();
-      std::cout << " exit(" << ErCode << ")\n";
+      Set.LogFile << " exit(" << ErCode << ")\n";
       Set.stop();
       break;
     }
@@ -543,12 +859,9 @@ public:
 
   template <typename InstrSetType>
   static void executeEBREAK(Instruction Instr, InstrSetType &Set) {
-    std::cout << "ebreak\n";
+    Set.LogFile << "ebreak\n";
     Set.stop();
   }
-
-  //---------------------------------------------------------------------------------------
-
 };
 
 //--------------------------------RV32IInstrDecoder--------------------------------------
@@ -562,89 +875,25 @@ public:
   struct InstMapElem {
     Instruction Instr;
     std::bitset<Instruction::Sz> Mask;
-    FunctType<InstrSetType> Func;
+    ExecuteFuncType<InstrSetType> Func;
   };
   
   template <typename InstrSetType>
   static std::vector<InstMapElem<InstrSetType>> registerInstrs() {
     std::vector<InstMapElem<InstrSetType>> InstrMap;
 
-    InstrMap.emplace_back(ADD, 0xfe00707f,
-                          &RV32IInstrExecutor::executeADD<InstrSetType>);
-    InstrMap.emplace_back(SUB, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSUB<InstrSetType>);
-    InstrMap.emplace_back(XOR, 0xfe00707f,
-                          &RV32IInstrExecutor::executeXOR<InstrSetType>);
-    InstrMap.emplace_back(OR, 0xfe00707f,
-                          &RV32IInstrExecutor::executeOR<InstrSetType>);
-    InstrMap.emplace_back(AND, 0xfe00707f,
-                          &RV32IInstrExecutor::executeAND<InstrSetType>);
-    InstrMap.emplace_back(SLL, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSLL<InstrSetType>);
-    InstrMap.emplace_back(SRL, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSRL<InstrSetType>);
-    InstrMap.emplace_back(SRA, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSRA<InstrSetType>);
-    InstrMap.emplace_back(SLT, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSLT<InstrSetType>);
-    InstrMap.emplace_back(SLTU, 0xfe00707f,
-                          &RV32IInstrExecutor::executeSLTU<InstrSetType>);
-
-    InstrMap.emplace_back(ADDI, 0x0000707f,
-                          &RV32IInstrExecutor::executeADDI<InstrSetType>);
-    InstrMap.emplace_back(XORI, 0x0000707f,
-                          &RV32IInstrExecutor::executeXORI<InstrSetType>);
-    InstrMap.emplace_back(ORI, 0x0000707f,
-                          &RV32IInstrExecutor::executeORI<InstrSetType>);
-    InstrMap.emplace_back(ANDI, 0x0000707f,
-                          &RV32IInstrExecutor::executeANDI<InstrSetType>);
-    InstrMap.emplace_back(SLLI, 0xfff0707f,
-                          &RV32IInstrExecutor::executeSLLI<InstrSetType>);
-    InstrMap.emplace_back(SRLI, 0xfff0707f,
-                          &RV32IInstrExecutor::executeSRLI<InstrSetType>);
-    InstrMap.emplace_back(SRAI, 0xfff0707f,
-                          &RV32IInstrExecutor::executeSRAI<InstrSetType>);
-    InstrMap.emplace_back(SLTI, 0x0000707f,
-                          &RV32IInstrExecutor::executeSLTI<InstrSetType>);
-    InstrMap.emplace_back(SLTIU, 0x0000707f,
-                          &RV32IInstrExecutor::executeSLTIU<InstrSetType>);
-
-    InstrMap.emplace_back(LB, 0x0000707f,
-                          &RV32IInstrExecutor::executeLB<InstrSetType>);
-    InstrMap.emplace_back(LH, 0x0000707f,
-                          &RV32IInstrExecutor::executeLH<InstrSetType>);
-    InstrMap.emplace_back(LW, 0x0000707f,
-                          &RV32IInstrExecutor::executeLW<InstrSetType>);
-
-    InstrMap.emplace_back(LUI, 0x0000007f,
-                          &RV32IInstrExecutor::executeLUI<InstrSetType>);
-    InstrMap.emplace_back(AUIPC, 0x0000007f,
-                          &RV32IInstrExecutor::executeAUIPC<InstrSetType>);
-
-    InstrMap.emplace_back(ECALL, 0xfff0707f,
-                          &RV32IInstrExecutor::executeECALL<InstrSetType>);
-    InstrMap.emplace_back(EBREAK, 0xfff0707f,
-                          &RV32IInstrExecutor::executeEBREAK<InstrSetType>);
-
-    InstrMap.emplace_back(SB, 0x0000707f,
-                          &RV32IInstrExecutor::executeSB<InstrSetType>);
-    InstrMap.emplace_back(SH, 0x0000707f,
-                          &RV32IInstrExecutor::executeSH<InstrSetType>);
-    InstrMap.emplace_back(SW, 0x0000707f,
-                          &RV32IInstrExecutor::executeSW<InstrSetType>);
-
-    InstrMap.emplace_back(JAL, 0x0000007f,
-                          &RV32IInstrExecutor::executeJAL<InstrSetType>);
-    InstrMap.emplace_back(JALR, 0x00000067,
-                          &RV32IInstrExecutor::executeJALR<InstrSetType>);
-    // to be continued
-
+#define ADD_INSTR(Name, Instr, Mask, EncodingType)                             \
+  Instruction Name(Instr, InstrEncodingType::EncodingType, Extensions::RV32I); \
+  InstrMap.emplace_back(Name, Mask,                                            \
+                        &RV32IInstrExecutor::execute##Name<InstrSetType>);
+#include "DefineInstrs.h"
+#undef ADD_INSTR
 
     return InstrMap;
   }
 
   template <typename InstrSetType>
-  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  std::optional<std::tuple<Instruction, ExecuteFuncType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr) {
     static std::vector<InstMapElem<InstrSetType>> InstrMap = registerInstrs<InstrSetType>();
 
@@ -654,7 +903,6 @@ public:
             Instruction(Instr, SetInstr.Instr.Type, Extensions::RV32I),
             SetInstr.Func};
     }
-
     return std::nullopt;
   }
 };
@@ -678,7 +926,7 @@ public:
     Registers->addNamedRegister("pc");
   }
 
-  virtual ~RV32IInstrSet() {};
+  ~RV32IInstrSet(){};
 
   Register<PcSz> *getPC() { return &Registers->getNamedRegister("pc"); }
 
@@ -686,17 +934,16 @@ public:
     Stream << "\nRV32IInstrSet:\n";
     Registers->dump(Stream);
   }
-
   void print() const { dump(std::cout); }
 
   template <typename InstrSetType>
-  std::optional<std::tuple<Instruction, FunctType<InstrSetType>>>
+  std::optional<std::tuple<Instruction, ExecuteFuncType<InstrSetType>>>
   tryDecode(Register<Instruction::Sz> Instr, InstrSetType &MainSet) {
     return Decoder.tryDecode<InstrSetType>(Instr);
   }
 
   template <typename InstrSetType>
-  bool tryExecute(Instruction Instr, FunctType<InstrSetType> Funct,
+  bool tryExecute(Instruction Instr, ExecuteFuncType<InstrSetType> Funct,
                   InstrSetType &MainSet) {
     if (Instr.Ex != Extensions::RV32I)
       return true;
@@ -704,9 +951,6 @@ public:
     return false;
   }
 };
-
-std::ostream &operator<<(std::ostream &Stream,
-                         const typename RV32I::RV32IInstrSet &Set);
 
 } // namespace RV32I
 } // namespace rvdash

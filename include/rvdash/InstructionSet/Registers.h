@@ -2,6 +2,7 @@
 #define REGISTER_H
 
 #include <algorithm>
+#include <assert.h>
 #include <bitset>
 #include <cstring>
 #include <iostream>
@@ -22,6 +23,11 @@ namespace rvdash {
 
 //-----------------------------------RegistersSet----------------------------------------
 
+/**
+ * @brief class RegistersSet - class to represent a register file belonging to a
+ *                             specific extension. Contains numbered and named
+ * registers.
+ */
 template <size_t Sz>
 using Register = std::bitset<Sz>;
 using RegName = unsigned;
@@ -34,33 +40,54 @@ Register<Sz> operator||(Register<Sz> Lhs, Register<Sz> Rhs) {
 template <size_t Sz>
 class RegistersSet {
 
+  void logChange(RegName Reg, Register<Sz> NewValue,
+                 std::ostream &LogFile) const {
+    LogFile << SetName << std::dec << Reg << " <- 0x" << std::hex
+            << NewValue.to_ulong() << "\n";
+    LogFile << std::dec;
+  }
+
+  void logChange(std::string RegName, Register<Sz> NewValue,
+                 std::ostream &LogFile) const {
+    LogFile << RegName << " <- 0x" << std::hex << NewValue.to_ulong() << "\n";
+    LogFile << std::dec;
+  }
+
 public:
   RegistersSet() {};
-  RegistersSet(const char *Name, unsigned Count, std::ostream &File = std::cout)
-      : SetName(Name), OwnRegs(Count), LogFile(File) {
+  RegistersSet(const char *Name, unsigned Count)
+      : SetName(Name), OwnRegs(Count) {
     OwnRegs[0] = 0;
   };
 
+  Register<Sz> &operator[](unsigned RegIdx) { return OwnRegs.at(RegIdx); }
+  Register<Sz> operator[](unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
+
+  Register<Sz> getRegister(unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
+
   void setRegister(RegName Reg, Register<Sz> NewValue) {
-    logChange(Reg, NewValue);
     if (strcmp(SetName, "X") == 0 && Reg == 0)
       return;
     OwnRegs.at(Reg) = NewValue;
   }
 
-  //Register<Sz> &operator[](unsigned RegIdx) { return OwnRegs.at(RegIdx); }
-
-  Register<Sz> operator[](unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
-  
-  Register<Sz> getRegister(unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
+  void setRegister(RegName Reg, Register<Sz> NewValue, std::ostream &LogFile) {
+    setRegister(Reg, NewValue);
+    logChange(Reg, NewValue, LogFile);
+  }
 
   void addNamedRegister(const std::string &Name) {
     NamedRegisters[Name] = 0;
   }
 
   void setNamedRegister(const std::string &Name, Register<Sz> NewValue) {
-    logChange(Name, NewValue);
     NamedRegisters.at(Name) = NewValue;
+  }
+
+  void setNamedRegister(const std::string &Name, Register<Sz> NewValue,
+                        std::ostream &LogFile) {
+    NamedRegisters.at(Name) = NewValue;
+    logChange(Name, NewValue, LogFile);
   }
 
   const Register<Sz> &getNamedRegister(const std::string &Name) const {
@@ -69,17 +96,6 @@ public:
 
   Register<Sz> &getNamedRegister(const std::string &Name) {
     return NamedRegisters.at(Name);
-  }
-
-  void logChange(RegName Reg, Register<Sz> NewValue) const {
-    LogFile << SetName << std::dec << Reg << " <- 0x" << std::hex
-            << NewValue.to_ulong() << "\n";
-    LogFile << std::dec;
-  }
-
-  void logChange(std::string RegName, Register<Sz> NewValue) const {
-    LogFile << RegName << " <- 0x" << std::hex << NewValue.to_ulong() << "\n";
-    LogFile << std::dec;
   }
 
   void dump(std::ostream &Stream) const {
@@ -94,27 +110,17 @@ public:
              << OwnRegs[Idx].to_ulong() << "\n";
     Stream << std::dec;
   }
-
-  void dump() const { dump(LogFile); }
-
   void print() const { dump(std::cout); }
 
-  /*void addExternalRegSet(std::shared_ptr<RegistersSet> Set) {
-    ExternalRegs.push_back(Set);
-  }*/
-
 private:
-  //std::vector<std::shared_ptr<RegistersSet>> ExternalRegs;
   const char *SetName;
   std::vector<Register<Sz>> OwnRegs;
   std::unordered_map<std::string, Register<Sz>> NamedRegisters;
-
-  std::ostream &LogFile;
 };
 
 template <size_t Sz>
 std::bitset<Sz> operator++(Register<Sz>& Reg) {
-  Reg = Reg.to_ulong() + Sz;
+  Reg = Reg.to_ulong() + Sz / CHAR_BIT;
   return Reg;
 }
 

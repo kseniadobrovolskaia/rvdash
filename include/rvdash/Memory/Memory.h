@@ -1,7 +1,9 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <assert.h>
 #include <bitset>
+#include <climits>
 #include <iostream>
 #include <set>
 #include <vector>
@@ -12,6 +14,10 @@ namespace rvdash {
 
 //------------------------------------Page-----------------------------------------------
 
+/**
+ * @brief struct Page - structure not used independently,
+ *                      it is a component of virtual memory.
+ */
 template <unsigned PageSz> struct Page {
   unsigned long long FirstAddr;
   mutable std::bitset<PageSz> Space;
@@ -21,7 +27,7 @@ template <unsigned PageSz> struct Page {
   };
 
   unsigned size() const { return PageSz; }
-
+  const std::bitset<PageSz> &getSpace() const { return Space; }
   std::vector<bool> getPageBits(unsigned long long Begin,
                                 unsigned long long End) const {
     if ((Begin < FirstAddr) || (End > FirstAddr + PageSz))
@@ -33,16 +39,22 @@ template <unsigned PageSz> struct Page {
     return Result;
   }
 
+  auto operator[](unsigned long long Idx) const {
+    if ((Idx < FirstAddr) || (Idx > FirstAddr + PageSz))
+      failWithError("Accessing addresses not belonging to this page");
+    return Space[Idx - FirstAddr];
+  }
+
   template <typename BitsIt>
   void setPageBits(unsigned long long Begin, unsigned long long End,
                    BitsIt It) const {
+    assert(Begin % CHAR_BIT == 0 && End % CHAR_BIT == 0 &&
+           "Misaligned on byte store in page");
     if ((Begin < FirstAddr) || (End > FirstAddr + PageSz))
       failWithError("Storing addresses not belonging to this page");
     for (auto Idx = Begin - FirstAddr; Idx < End - FirstAddr; ++Idx, ++It)
       Space[Idx] = *It;
   }
-
-  const std::bitset<PageSz> &getSpace() const { return Space; }
 
   void dump(std::ostream &Stream) const {
     Stream << "First address: " << FirstAddr << "\n";
@@ -51,12 +63,6 @@ template <unsigned PageSz> struct Page {
   }
 
   void print() const { dump(std::cout); }
-
-  auto operator[](unsigned long long Idx) const {
-    if ((Idx < FirstAddr) || (Idx > FirstAddr + PageSz))
-      failWithError("Accessing addresses not belonging to this page");
-    return Space[Idx - FirstAddr];
-  }
 };
 
 template <unsigned PageSz>
@@ -89,11 +95,101 @@ std::ostream &operator<<(std::ostream &Stream, const Page<PageSz> &Pg) {
 
 //-------------------------------------Memory--------------------------------------------
 
-template <unsigned AddrSz, unsigned PageSz = /* 4 kB / 100 */ 320,
-          unsigned long long SpaceSz = 1ull << (AddrSz - 8)>
-class Memory {
+/**
+ * @brief class Memory - class for representing virtual memory
+ *                       consisting of pages allocated when memory is accessed.
+ *                       Supports AddrSz-bit address space with byte addressing.
+ *                       All public methods use an Addr and Size in bytes,
+ *                       while private methods use bits.
+ */
+template <unsigned AddrSz, unsigned PageSz = 320> class Memory {
+
   std::set<Page<PageSz>> Pages;
 
+public:
+  Memory() {};
+  ~Memory() {};
+
+  constexpr static unsigned short getAddrSpaceSz() { return AddrSz; }
+  constexpr static unsigned short getPageSz() { return PageSz; }
+  const std::set<Page<PageSz>> &getPages() const { return Pages; }
+
+  template <typename RegisterType>
+  void load(unsigned long long Addr, unsigned long long Size,
+            RegisterType &Reg) {
+    if (Size > Reg.size())
+      failWithError("Size of load exceeds register size");
+    Addr *= CHAR_BIT;
+    Size *= CHAR_BIT;
+    validate(Addr, Size);
+    auto Bits = getBits(Addr, Size);
+    for (unsigned long long Idx = 0; Idx < Size; Idx++)
+      Reg[Idx] = Bits[Idx];
+  }
+
+  std::vector<bool> load(unsigned long long Addr, unsigned long long Size) {
+    Addr *= CHAR_BIT;
+    Size *= CHAR_BIT;
+    validate(Addr, Size);
+    return getBits(Addr, Size);
+  }
+
+  template <typename RegisterType>
+  void store(unsigned long long Addr, unsigned long long Size,
+             const RegisterType &Reg) {
+    if (Size > Reg.size())
+      failWithError("Size of store exceeds register size");
+    Addr *= CHAR_BIT;
+    Size *= CHAR_BIT;
+    validate(Addr, Size);
+    std::vector<bool> Bits;
+    Bits.reserve(Reg.size());
+    for (unsigned long long Idx = 0; Idx < Size; ++Idx)
+      Bits.push_back(Reg[Idx]);
+    setBits(Addr, Bits);
+  }
+
+  template <typename RegisterType>
+  void store(unsigned long long Addr, unsigned long long Size,
+             const RegisterType &Reg, std::ostream &LogFile) {
+    store(Addr, Size, Reg);
+    logChange(Addr, Size, Reg, LogFile);
+  }
+
+  void store(unsigned long long Addr, unsigned long long Size) {
+    Addr *= CHAR_BIT;
+    Size *= CHAR_BIT;
+    validate(Addr, Size);
+    std::vector<bool> Bits(Size, 1);
+    setBits(Addr, Bits);
+  }
+
+  bool isAllocated(unsigned long long Addr, unsigned long long Sz) const {
+    Addr *= CHAR_BIT;
+    long long Size = Sz * CHAR_BIT;
+    for (auto Page = Pages.cbegin(); Page < Pages.cend() && Size > 0; ++Page) {
+      auto First = (*Page).FirstAddr;
+      if ((First <= Addr) && (Addr < (First + PageSz))) {
+        Size -= (First + PageSz - Addr);
+        Addr = First + PageSz;
+      }
+    }
+    return Size <= 0;
+  };
+
+  void dump(std::ostream &Stream) const {
+    Stream << "Memory (AddrSz = " << AddrSz << ", PageSz = " << PageSz
+           << "):\n";
+    Stream << "Count pages: " << Pages.size() << "\n\n";
+    for (const auto &Pg : Pages) {
+      Stream << "Page:\n";
+      Pg.dump(Stream);
+      Stream << "\n\n";
+    }
+  }
+  void print() const { dump(std::cout); }
+
+private:
   std::vector<bool> getBits(unsigned long long Addr,
                             unsigned long long Size) const {
     const auto First = getFirstPage(Addr);
@@ -134,9 +230,25 @@ class Memory {
     }
   }
 
+  template <typename RegisterType>
+  void logChange(unsigned long long Addr, unsigned long long Size,
+                 RegisterType &Bits, std::ostream &LogFile) const {
+    LogFile << "\nChanged memory bytes [" << Addr << ", "
+            << Addr + Bits.size() / CHAR_BIT << "].\nNew bytes:";
+    for (auto CntBytes = 0; CntBytes < Size; ++CntBytes) {
+      if (CntBytes % 4 == 0)
+        LogFile << "\n";
+      else
+        LogFile << " ";
+      for (auto B = 8; B > 0; --B)
+        LogFile << Bits[CntBytes * CHAR_BIT + B - 1];
+    }
+  }
+
   void validate(unsigned long long Addr, unsigned long long Size) {
-    if (Addr >= SpaceSz)
-      failWithError("Address exceeds address space size");
+    if (Addr >= (1ull << AddrSz))
+      failWithError("Address exceeds address space size " +
+                    std::to_string(1ull << AddrSz));
     if (!isAllocated(Addr, Size))
       allocate(Addr, Size);
   }
@@ -149,84 +261,7 @@ class Memory {
     if (Allocated < Size)
       allocate(StartAddr + PageSz, Size - Allocated);
   }
-
-public:
-  Memory() {};
-  ~Memory() {};
-
-  constexpr static unsigned short getAddrSpaceSz() { return AddrSz; }
-  constexpr static unsigned short getRealSpaceSz() { return SpaceSz; }
-  constexpr static unsigned short getPageSz() { return PageSz; }
-
-  const std::set<Page<PageSz>> &getPages() const { return Pages; }
-
-  template <typename RegisterType>
-  void load(unsigned long long Addr, unsigned long long Size,
-            RegisterType &Reg) {
-    if (Size > Reg.size())
-      failWithError("Size of load exceeds register size");
-    validate(Addr, Size);
-    auto Bits = getBits(Addr, Size);
-    for (unsigned long long Idx = 0; Idx < Size; Idx++)
-      Reg[Idx] = Bits[Idx];
-  }
-
-  std::vector<bool> load(unsigned long long Addr, unsigned long long Size) {
-    validate(Addr, Size);
-    return getBits(Addr, Size);
-  }
-
-  template <typename RegisterType>
-  void store(unsigned long long Addr, unsigned long long Size,
-             const RegisterType &Reg) {
-    if (Size > Reg.size())
-      failWithError("Size of store exceeds register size");
-    validate(Addr, Size);
-    std::vector<bool> Bits;
-    Bits.reserve(Reg.size());
-    for (unsigned long long Idx = 0; Idx < Size; ++Idx)
-      Bits.push_back(Reg[Idx]);
-    setBits(Addr, Bits);
-  }
-
-  void store(unsigned long long Addr, unsigned long long Size) {
-    validate(Addr, Size);
-    setBits(Addr, std::vector<bool>(Size, 1));
-  }
-
-  bool isAllocated(unsigned long long Addr, unsigned long long Sz) const {
-    long long Size = Sz;
-    for (auto Page = Pages.cbegin(); Page < Pages.cend() && Size > 0; ++Page) {
-      auto First = (*Page).FirstAddr;
-      if ((First <= Addr) && (Addr < (First + PageSz))) {
-        Size -= (First + PageSz - Addr);
-        Addr = First + PageSz;
-      }
-    }
-    return Size <= 0;
-  };
-
-  void dump(std::ostream &Stream) const {
-    Stream << "Memory (AddrSz = " << AddrSz << ", SpaceSz = " << SpaceSz
-           << ", PageSz = " << PageSz << "):\n";
-    Stream << "Count pages: " << Pages.size() << "\n\n";
-    for (const auto &Pg : Pages) {
-      Stream << "Page:\n";
-      Pg.dump(Stream);
-      Stream << "\n\n";
-    }
-  }
-
-  void print() const { dump(std::cout); }
 };
-
-template <unsigned AddrSz, unsigned PageSz, unsigned long long SpaceSz>
-std::ostream &operator<<(std::ostream &Stream,
-                         const Memory<AddrSz, SpaceSz, PageSz> &Mem) {
-  for (const auto &Pg : Mem.getPages())
-    Stream << Pg;
-  return Stream;
-}
 
 } // namespace rvdash
 

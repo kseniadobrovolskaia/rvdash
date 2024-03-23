@@ -62,10 +62,12 @@ void generateProcess(const std::string ExStr,
   auto Extensions = getSelectedInstructionSets(ExStr);
 
   Memory<Sz> Mem;
-  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet, M::MInstrSet> InstructionSet(Mem);
+  std::ofstream LogFile("trace.txt");
+  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet, M::MInstrSet> InstructionSet(
+      Mem, LogFile);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
   Cpu.execute(0 /* pc */, Program);
-  Cpu.print();
+  // Cpu.print();
 }
 
 } // namespace rvdash

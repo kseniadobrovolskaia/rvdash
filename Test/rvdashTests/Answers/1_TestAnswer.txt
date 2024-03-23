@@ -1,0 +1,18 @@
+====================Simulation started====================
+addi X10, X0, 0x1
+X10 <- 0x1
+X11 <- 0x1004
+auipc X11, 0x1000
+addi X11, X11, 0x20
+X11 <- 0x1024
+addi X12, X0, 0xf
+X12 <- 0xf
+addi X17, X0, 0x40
+X17 <- 0x40
+ecall write(1, 4132, 15)
+addi X10, X0, 0x0
+X10 <- 0x0
+addi X17, X0, 0x5d
+X17 <- 0x5d
+ecall exit(0)
+===================Simulation completed===================

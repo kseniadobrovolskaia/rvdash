@@ -13,6 +13,6 @@ add_executable(rvdash ${SOURCE_EXE})
 
 add_subdirectory(lib/Memory)
 add_subdirectory(lib/InstructionSet)
-#add_subdirectory(Tests)
+add_subdirectory(Test)
 
 target_link_libraries(rvdash InstructionSet)
