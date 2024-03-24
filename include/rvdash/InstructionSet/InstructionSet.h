@@ -68,8 +68,9 @@ using ExecuteFuncType = void (*)(Instruction, InstrSetType &Set);
 
 /**
  * @brief class InstrSet - main part of CPU, contains (private inheritance) all
- * possible extensions (the basic set too). AddrSz means size of address space
- * and program counter register PC.
+ *                         possible extensions (the basic set too). AddrSz
+ *                         means size of address space and program counter
+ *                         register PC.
  */
 template <typename MemoryType, size_t AddrSz, typename... Exts>
 class InstrSet : private Exts... {
@@ -98,7 +99,7 @@ public:
 
   /**
    * @brief extractPC - function to find the basic set and get the program
-   * counter using the concept HasPC
+   *                    counter using the concept HasPC
    */
   auto extractPC() {
     auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) ^ ...);
@@ -124,7 +125,7 @@ public:
 
   /**
    * @brief isThereBase - function to identify a basic set by the presence of PC
-   * in it. Is it possible?
+   *                      in it. Is it possible?
    */
   bool isThereBase() const {
     return (isBaseSet(static_cast<const Exts&>(*this)) ^ ...);
@@ -134,9 +135,10 @@ public:
    * @brief decode - function to decoding Instr,
    *                 using sequential substitution of all extensions.
    *                 When the extension has identified its instruction, it
-   * returns Instruction and a pointer to the function to execute. If the given
-   * instruction does not belong to this extension, then it returns std::nullopt
-   * and this nullopt is ignored by the overloaded ^ operator.
+   *                 returns Instruction and a pointer to the function to
+   *                 execute. If the given instruction does not belong to
+   *                 this extension, then it returns std::nullopt and this
+   *                 nullopt is ignored by the overloaded ^ operator.
    */
   std::tuple<Instruction, ExecuteFuncT>
   decode(Register<Instruction::Sz> Instr) {
@@ -148,9 +150,9 @@ public:
 
   /**
    * @brief execute - function to execution Instr. Its idea is the same as in
-   * the decoding function. It quickly realizes that the instruction does not
-   *                  belong to this extension using the field Instruction::Ex
-   * (Extentions).
+   *                  the decoding function. It quickly realizes that the
+   *                  instruction does not belong to this extension using the
+   *                  field Instruction::Ex (Extentions).
    */
   template <typename Variant> void execute(Instruction &Instr, Variant Functs) {
     auto Result =
@@ -163,9 +165,10 @@ public:
    * @brief executeProgram - function to excution of the main machine cycle,
    *                         using sequential substitution of its extensions.
    *                         When the extension has identified its instruction,
-   * it returns Instr and a pointer to the function to execute (Func). If the
-   * given instruction does not belong to this extension, then it returns
-   * std::nullopt.
+   *                         it returns Instr and a pointer to the function to
+   *                         execute (Func). If the given instruction does not
+   *                         belong to this extension, then it returns
+   *                         std::nullopt.
    */
   void executeProgram(unsigned long long PcValue) {
     setPC(PcValue);

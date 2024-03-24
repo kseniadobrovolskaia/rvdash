@@ -22,17 +22,17 @@ enable_testing()
 include_directories(../include)
 
 add_executable(
-  rvdash_test
+  rvdashTests
   
-  Run_tests.cpp
+  RunTests.cpp
   Test.cpp
 )
 target_link_libraries(
-  rvdash_test
+  rvdashTests
   InstructionSet
   GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(rvdash_test)
+gtest_discover_tests(rvdashTests)
 

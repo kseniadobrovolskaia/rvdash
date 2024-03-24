@@ -20,7 +20,12 @@ constexpr inline int32_t signExtend(uint32_t Value) {
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
-//
+/**
+ * @brief class RV32IInstrExecutor - this class represents the singleton pattern
+ *                                   because it is needed to contain static
+ *                                   functions to execute all extension
+ *                                   instructions.
+ */
 class RV32IInstrExecutor {
   static std::shared_ptr<RegistersSet<32>> Registers;
   static std::shared_ptr<RV32IInstrExecutor> SingleExecutor;
@@ -328,7 +333,7 @@ public:
   static void executeSLLI(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
-    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     std::bitset<5> Imm = Instr.extractImm_11_0();
     auto Result = Rs1Value << Imm.to_ulong();
     Set.LogFile << "slli "
@@ -348,7 +353,7 @@ public:
   static void executeSRLI(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
-    int Rs1Value = Registers->getRegister(Rs1).to_ulong();
+    unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     std::bitset<5> Imm = Instr.extractImm_11_0();
     auto Result = Rs1Value >> Imm.to_ulong();
     Set.LogFile << "srli "
@@ -866,6 +871,15 @@ public:
 
 //--------------------------------RV32IInstrDecoder--------------------------------------
 
+/**
+ * @brief class RV32IInstrDecoder - this class decode instructions belonging to
+ *                                  this extension. First, a table of all
+ *                                  instructions is filled in. Then, to
+ *                                  recognize the instruction, masks of all
+ *                                  instructions are sequentially applied to
+ *                                  the decoded instruction, and if no matches
+ *                                  are found, then std::nullopt is returned.
+ */
 class RV32IInstrDecoder {
 
 public:
@@ -909,6 +923,12 @@ public:
 
 //----------------------------------RV32IInstrSet----------------------------------------
 
+/**
+ * @brief class RV32IInstrSet - this is the base set RV32I. It contains 32
+ *                              32-bit X-registers, 32-bit PC and 39
+ *                              instructions. The Decoder and Executor are
+ *                              responsible for decoding and execution.
+ */
 class RV32IInstrSet {
 public:
   static const size_t PcSz = 32;

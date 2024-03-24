@@ -35,9 +35,9 @@ void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
 
 } // namespace rvdash
 
-void Run_tests() {
+void RunTests() {
   try {
-    for (auto NumTest = 1; NumTest < 2; ++NumTest) {
+    for (auto NumTest = 1; NumTest < 11; ++NumTest) {
       std::cout << "Start test number " << NumTest << std::endl;
       std::string NameData = "../../Test/rvdashTests/Data/" +
                              std::to_string(NumTest) + "_TestData.bin";

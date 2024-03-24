@@ -1,0 +1,7 @@
+====================Simulation started====================
+addi X11, X0, 0xf
+X11 <- 0xf
+xori X13, X11, 0x3e1
+X13 <- 0x3ee
+ebreak
+===================Simulation completed===================

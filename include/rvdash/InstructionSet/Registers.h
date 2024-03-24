@@ -26,7 +26,7 @@ namespace rvdash {
 /**
  * @brief class RegistersSet - class to represent a register file belonging to a
  *                             specific extension. Contains numbered and named
- * registers.
+ *                             registers.
  */
 template <size_t Sz>
 using Register = std::bitset<Sz>;
