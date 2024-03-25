@@ -105,7 +105,7 @@ public:
         Stream << Name << " = 0x" << std::hex << Reg.to_ulong() << "\n";
     }
     Stream << "\nRegisters: \n";
-    for (auto Idx = 0; Idx < OwnRegs.size(); ++Idx)
+    for (auto Idx = 0; Idx < static_cast<int>(OwnRegs.size()); ++Idx)
       Stream << SetName << std::dec << Idx << " = 0x" << std::hex
              << OwnRegs[Idx].to_ulong() << "\n";
     Stream << std::dec;

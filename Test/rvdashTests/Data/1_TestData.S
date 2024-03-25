@@ -1,4 +1,4 @@
-# 1 Test: Hello,rvdash! 
+# 1 Test: Hello,rvdash! (ecall)
 
 
 # a0-a5 - parameters to linux function services

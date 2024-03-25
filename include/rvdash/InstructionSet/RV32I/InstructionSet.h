@@ -9,34 +9,35 @@
 namespace rvdash {
 namespace RV32I {
 
+const size_t RegSz = 32;
+
 class RV32IInstrSet;
 
 template <unsigned OldBits>
 constexpr inline int32_t signExtend(uint32_t Value) {
   static_assert(OldBits > 0, "Bit width must be greater than 0");
-  static_assert(OldBits <= 32, "Bit width out of range");
-  return int32_t(Value << (32 - OldBits)) >> (64 - OldBits);
+  static_assert(OldBits <= RegSz, "Bit width out of range");
+  return int32_t(Value << (RegSz - OldBits)) >> (RegSz - OldBits);
 }
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
 /**
- * @brief class RV32IInstrExecutor - this class represents the singleton pattern
- *                                   because it is needed to contain static
- *                                   functions to execute all extension
- *                                   instructions.
+ * @brief class RV32IInstrExecutor - singleton RV32I executor needed to
+ *                                   contain static functions to execute
+ *                                   all extension instructions.
  */
 class RV32IInstrExecutor {
-  static std::shared_ptr<RegistersSet<32>> Registers;
-  static std::shared_ptr<RV32IInstrExecutor> SingleExecutor;
+  static std::shared_ptr<RegistersSet<RegSz>> Registers;
 
-public:
   RV32IInstrExecutor() {};
-  RV32IInstrExecutor(std::shared_ptr<RegistersSet<32>> Regs) {
+  RV32IInstrExecutor(std::shared_ptr<RegistersSet<RegSz>> Regs) {
     Registers = Regs;
   };
- 
-  static std::shared_ptr<RV32IInstrExecutor> getExecutorInstance(std::shared_ptr<RegistersSet<32>> Regs);
+
+public:
+  static RV32IInstrExecutor &
+  getExecutorInstance(std::shared_ptr<RegistersSet<RegSz>> Regs);
 
   template <typename InstrSetType>
   void execute(Instruction Instr, ExecuteFuncType<InstrSetType> Func,
@@ -811,7 +812,7 @@ public:
   template <typename InstrSetType>
   static void executeAUIPC(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    std::bitset<32> ImmBitset = Instr.extractImm_31_12() << 12;
+    std::bitset<RegSz> ImmBitset = Instr.extractImm_31_12() << 12;
     auto Imm = ImmBitset.to_ulong();
     auto OldPc = Registers->getNamedRegister("pc").to_ulong();
     auto RdValue = OldPc + Imm;
@@ -845,7 +846,7 @@ public:
       auto Size = Registers->getRegister(12).to_ulong();
       Set.LogFile << " write(" << Fd << ", " << Ptr << ", " << Size << ")\n";
       std::bitset<CHAR_BIT> Str;
-      for (auto Byte = 0; Byte < Size; Byte++, Ptr++) {
+      for (auto Byte = 0; Byte < static_cast<int>(Size); Byte++, Ptr++) {
         Set.getMemory().load(Ptr, /* Size */ 1, Str);
         write(Fd, reinterpret_cast<const void *>(&Str), 1);
       }
@@ -872,18 +873,20 @@ public:
 //--------------------------------RV32IInstrDecoder--------------------------------------
 
 /**
- * @brief class RV32IInstrDecoder - this class decode instructions belonging to
- *                                  this extension. First, a table of all
- *                                  instructions is filled in. Then, to
- *                                  recognize the instruction, masks of all
- *                                  instructions are sequentially applied to
- *                                  the decoded instruction, and if no matches
- *                                  are found, then std::nullopt is returned.
+ * @brief class RV32IInstrDecoder - singleton RV32I decoder works like this:
+ *                                  1. Table of all instructions is filled in.
+ *                                  2. When a new instruction needs to be
+ *                                     decoded, masks of all instructions are
+ *                                     sequentially applied to it
+ *                                  3. If no matches are found, then
+ *                                     std::nullopt is returned.
  */
 class RV32IInstrDecoder {
 
-public:
   RV32IInstrDecoder() {};
+
+public:
+  static RV32IInstrDecoder &getDecoderInstance();
 
   template <typename InstrSetType>
   struct InstMapElem {
@@ -930,25 +933,20 @@ public:
  *                              responsible for decoding and execution.
  */
 class RV32IInstrSet {
-public:
-  static const size_t PcSz = 32;
-  static const size_t RegSz = 32;
 
-protected:
   std::shared_ptr<RegistersSet<RegSz>> Registers;
-  RV32IInstrDecoder Decoder;
-  std::shared_ptr<RV32IInstrExecutor> Executor;
+  RV32IInstrDecoder &Decoder;
+  RV32IInstrExecutor &Executor;
 
 public:
   RV32IInstrSet()
       : Registers(std::make_shared<RegistersSet<RegSz>>("X", 32)),
+        Decoder(RV32IInstrDecoder::getDecoderInstance()),
         Executor(RV32IInstrExecutor::getExecutorInstance(Registers)) {
     Registers->addNamedRegister("pc");
   }
 
-  ~RV32IInstrSet(){};
-
-  Register<PcSz> *getPC() { return &Registers->getNamedRegister("pc"); }
+  Register<RegSz> *getPC() { return &Registers->getNamedRegister("pc"); }
 
   void dump(std::ostream &Stream) const {
     Stream << "\nRV32IInstrSet:\n";
@@ -967,7 +965,7 @@ public:
                   InstrSetType &MainSet) {
     if (Instr.Ex != Extensions::RV32I)
       return true;
-    Executor->execute(Instr, Funct, MainSet);
+    Executor.execute(Instr, Funct, MainSet);
     return false;
   }
 };

@@ -29,7 +29,7 @@ add_executable(
 )
 target_link_libraries(
   rvdashTests
-  InstructionSet
+  rvdash
   GTest::gtest_main
 )
 

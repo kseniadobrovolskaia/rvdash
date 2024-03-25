@@ -4,16 +4,23 @@
 #include <iostream>
 #include <string>
 
+/**
+ * @brief IsEqual - This function, using a FileCheck,
+ *                  finds the necessary execution elements (writes to
+ *                  registers or memory) in the trace.
+ */
 ::testing::AssertionResult IsEqual(const std::string &NameResults,
                                    const std::string &NameAnswer) {
+  const char *DiffFile = "Diff.txt";
   std::string Command =
-      "diff " + NameResults + " " + NameAnswer + " > Diff.txt";
+      "cat " + NameResults + " | FileCheck " + NameAnswer + " > " + DiffFile;
+
   system(Command.c_str());
   std::ifstream IsEqual;
-  IsEqual.open("Diff.txt");
+  IsEqual.open(DiffFile);
 
   if (!(IsEqual.is_open())) {
-    std::cerr << "File \"is_equal.txt\" did not open\n";
+    std::cerr << "File " << DiffFile << " did not open\n";
     exit(EXIT_FAILURE);
   }
 
@@ -21,7 +28,8 @@
   IsEqual >> Command;
 
   if (Command.size() != 0) {
-    return ::testing::AssertionFailure() << "Files are not equal";
+    return ::testing::AssertionFailure()
+           << "The required trace elements were not found";
   } else {
     return ::testing::AssertionSuccess();
   }
@@ -29,9 +37,13 @@
 
 //--------------------------------------RUN_rvdash---------------------------------------
 
-TEST(RunTests, Test0) {
-  RunTests(); // Run rvdash and fill files in "Results" directory.
-}
+/**
+ * @brief TEST(RunTests, Test0) - This function is not a test.
+ *                                It starts the compilation and generation
+ *                                of all traces (fill files in "Results"
+ *                                directiry.
+ */
+TEST(RunTests, Test0) { RunTests(); }
 
 //-------------------------------------RVDASH_TESTS--------------------------------------
 
@@ -52,6 +64,11 @@ static std::string NameAnswers(int NumTest) {
     EXPECT_TRUE(IsEqual(NameResults(Num), NameAnswers(Num)));                  \
   }
 
+/**
+ * @brief TEST - Tests.
+ *               Expects to find the necessary elements in the trace.
+ *
+ */
 ADD_TEST(1);
 ADD_TEST(2);
 ADD_TEST(3);

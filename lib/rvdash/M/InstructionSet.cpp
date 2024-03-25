@@ -1,8 +1,5 @@
 #include "rvdash/InstructionSet/M/InstructionSet.h"
 
-
-
-
 namespace rvdash {
 namespace M {
 
@@ -33,4 +30,3 @@ std::ostream &operator<<(std::ostream &Stream,
 
 } // namespace M
 } // namespace rvdash
-

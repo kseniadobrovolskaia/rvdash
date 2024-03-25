@@ -1,8 +1,5 @@
 #include "Error.h"
 
-
-
-
 namespace rvdash {
 
 void failWithError(const std::string &Msg) {
@@ -10,5 +7,3 @@ void failWithError(const std::string &Msg) {
 }
 
 } // namespace rvdash
-
-

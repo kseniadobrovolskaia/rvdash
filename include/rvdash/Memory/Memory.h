@@ -235,7 +235,7 @@ private:
                  RegisterType &Bits, std::ostream &LogFile) const {
     LogFile << "\nChanged memory bytes [" << Addr << ", "
             << Addr + Bits.size() / CHAR_BIT << "].\nNew bytes:";
-    for (auto CntBytes = 0; CntBytes < Size; ++CntBytes) {
+    for (auto CntBytes = 0; CntBytes < static_cast<int>(Size); ++CntBytes) {
       if (CntBytes % 4 == 0)
         LogFile << "\n";
       else

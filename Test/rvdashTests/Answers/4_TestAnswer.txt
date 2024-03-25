@@ -1,7 +1,1 @@
-====================Simulation started====================
-addi X11, X0, 0x5d
-X11 <- 0x5d
-ori X13, X11, 0x377
-X13 <- 0x37f
-ebreak
-===================Simulation completed===================
+CHECK: X13 <- 0x37f

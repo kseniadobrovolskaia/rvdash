@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(InstructionSet)
+project(rvdash)
 
 add_compile_options(-Wall -std=c++20 -fexceptions)
 
@@ -13,5 +13,5 @@ set(SOURCE_LIB InstructionSet.cpp
    )
 
 
-add_library(InstructionSet STATIC ${SOURCE_LIB})
+add_library(rvdash STATIC ${SOURCE_LIB})
 
