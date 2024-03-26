@@ -145,6 +145,17 @@ struct Instruction {
     return ((Bits >> 31) & std::bitset<Sz>(0x1)).to_ulong();
   }
 
+  uint32_t extractImm_S() const {
+    std::bitset<4> Imm_4_0 = extractImm_4_0();
+    std::bitset<6> Imm_11_5 = extractImm_11_5();
+    std::bitset<12> Imm;
+    for (auto Idx = 0; Idx < 5; ++Idx)
+      Imm[Idx] = Imm_4_0[Idx];
+    for (auto Idx = 0; Idx < 7; ++Idx)
+      Imm[Idx + 5] = Imm_11_5[Idx];
+    return Imm.to_ulong();
+  }
+
   uint32_t extractImm_B() const {
     std::bitset<4> Imm_4_1 = extractImm_4_1();
     std::bitset<6> Imm_10_5 = extractImm_10_5();

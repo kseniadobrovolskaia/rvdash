@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(tests)
 
+execute_process(COMMAND chmod +x ../Test/TestGen.bash)
+execute_process(COMMAND ../Test/TestGen.bash)
+
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
 

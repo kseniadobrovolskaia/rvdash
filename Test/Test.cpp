@@ -4,30 +4,35 @@
 #include <iostream>
 #include <string>
 
+static auto getNameResults(unsigned NumTest) {
+  const char *Dir = "../../Test/rvdashTests/Results/";
+  const char *File = "_TestResults.txt";
+  return Dir + std::to_string(NumTest) + File;
+}
+
+static auto getNameAnswers(unsigned NumTest) {
+  const char *Dir = "../../Test/rvdashTests/Answers/";
+  const char *File = "_TestAnswer.txt";
+  return Dir + std::to_string(NumTest) + File;
+}
+
 /**
  * @brief IsEqual - This function, using a FileCheck,
  *                  finds the necessary execution elements (writes to
  *                  registers or memory) in the trace.
  */
-::testing::AssertionResult IsEqual(const std::string &NameResults,
-                                   const std::string &NameAnswer) {
-  const char *DiffFile = "Diff.txt";
-  std::string Command =
-      "cat " + NameResults + " | FileCheck " + NameAnswer + " > " + DiffFile;
+::testing::AssertionResult IsEqual(unsigned Name) {
+  static unsigned NumTest = 0;
+  NumTest++;
+  auto NameAnswer = getNameAnswers(NumTest);
+  auto NameResults = getNameResults(NumTest);
 
-  system(Command.c_str());
-  std::ifstream IsEqual;
-  IsEqual.open(DiffFile);
-
-  if (!(IsEqual.is_open())) {
-    std::cerr << "File " << DiffFile << " did not open\n";
-    exit(EXIT_FAILURE);
-  }
-
-  Command.clear();
-  IsEqual >> Command;
-
-  if (Command.size() != 0) {
+  std::string Command = "cat " + NameResults + " | FileCheck " + NameAnswer;
+  auto Result = system(Command.c_str());
+  auto RmAsm = "rm ../../Test/rvdashTests/Data/" + std::to_string(NumTest) +
+               "_TestData.bin";
+  system(RmAsm.c_str());
+  if (Result != 0) {
     return ::testing::AssertionFailure()
            << "The required trace elements were not found";
   } else {
@@ -47,37 +52,15 @@ TEST(RunTests, Test0) { RunTests(); }
 
 //-------------------------------------RVDASH_TESTS--------------------------------------
 
-static std::string NameResults(int NumTest) {
-  std::string Str1 = "../../Test/rvdashTests/Results/";
-  std::string Str2 = "_TestResults.txt";
-  return Str1 + std::to_string(NumTest) + Str2;
-}
-
-static std::string NameAnswers(int NumTest) {
-  std::string Str1 = "../../Test/rvdashTests/Answers/";
-  std::string Str2 = "_TestAnswer.txt";
-  return Str1 + std::to_string(NumTest) + Str2;
-}
-
 #define ADD_TEST(Num)                                                          \
-  TEST(Test_rvdash, Test##Num) {                                               \
-    EXPECT_TRUE(IsEqual(NameResults(Num), NameAnswers(Num)));                  \
-  }
+  TEST(Test_rvdash, Test##Num) { EXPECT_TRUE(IsEqual(Num)); }
 
 /**
  * @brief TEST - Tests.
  *               Expects to find the necessary elements in the trace.
  *
  */
-ADD_TEST(1);
-ADD_TEST(2);
-ADD_TEST(3);
-ADD_TEST(4);
-ADD_TEST(5);
-ADD_TEST(6);
-ADD_TEST(7);
-ADD_TEST(8);
-ADD_TEST(9);
-ADD_TEST(10);
+
+#include "GenTests.h"
 
 #undef ADD_TEST

@@ -177,6 +177,8 @@ public:
       step();
       increasePC();
     } while (!Stop);
+    std::ofstream File("Mem.dump");
+    Memory.dump(File);
   }
 
   /**

@@ -153,7 +153,7 @@ public:
   void store(unsigned long long Addr, unsigned long long Size,
              const RegisterType &Reg, std::ostream &LogFile) {
     store(Addr, Size, Reg);
-    logChange(Addr, Size, Reg, LogFile);
+    logChange(Addr * CHAR_BIT, Size * CHAR_BIT, Reg, LogFile);
   }
 
   void store(unsigned long long Addr, unsigned long long Size) {
@@ -231,11 +231,10 @@ private:
   }
 
   template <typename RegisterType>
-  void logChange(unsigned long long Addr, unsigned long long Size,
-                 RegisterType &Bits, std::ostream &LogFile) const {
-    LogFile << "\nChanged memory bytes [" << Addr << ", "
-            << Addr + Bits.size() / CHAR_BIT << "].\nNew bytes:";
-    for (auto CntBytes = 0; CntBytes < static_cast<int>(Size); ++CntBytes) {
+  void printBits(unsigned long long Size, RegisterType &Bits,
+                 std::ostream &LogFile) const {
+    for (auto CntBytes = 0; CntBytes < static_cast<int>(Size) / CHAR_BIT;
+         ++CntBytes) {
       if (CntBytes % 4 == 0)
         LogFile << "\n";
       else
@@ -243,6 +242,16 @@ private:
       for (auto B = 8; B > 0; --B)
         LogFile << Bits[CntBytes * CHAR_BIT + B - 1];
     }
+    LogFile << "\n\n";
+  }
+
+  template <typename RegisterType>
+  void logChange(unsigned long long Addr, unsigned long long Size,
+                 RegisterType &Bits, std::ostream &LogFile) const {
+    LogFile << std::hex << "\nChanged memory bytes [" << std::hex << "0x"
+            << Addr / CHAR_BIT << ", "
+            << "0x" << (Addr + Size) / CHAR_BIT << "].\nNew bytes:" << std::dec;
+    printBits(Size, Bits, LogFile);
   }
 
   void validate(unsigned long long Addr, unsigned long long Size) {

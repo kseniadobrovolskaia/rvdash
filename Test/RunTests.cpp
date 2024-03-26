@@ -50,9 +50,9 @@ void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
  */
 void RunTests() {
   try {
-    unsigned CountTests = 11;
+    unsigned CountTests = 45;
     const unsigned AddrSpaceSz = 32;
-    for (auto NumTest = 1; NumTest < CountTests; ++NumTest) {
+    for (unsigned NumTest = 1; NumTest < CountTests; ++NumTest) {
       std::cout << "Start test number " << NumTest << std::endl;
       std::string NameData = "../../Test/rvdashTests/Data/" +
                              std::to_string(NumTest) + "_TestData.bin";
@@ -61,7 +61,6 @@ void RunTests() {
       std::string NameResults = "../../Test/rvdashTests/Results/" +
                                 std::to_string(NumTest) + "_TestResults.txt";
 
-      //
       std::string Cmd1 =
           "riscv64-unknown-linux-gnu-as -march=rv32i -mabi=ilp32 -o tmp.o " +
           NameAsm;

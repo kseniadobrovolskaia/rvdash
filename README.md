@@ -1,9 +1,174 @@
 # rvdash 
 
-> **rvdash** - cимулятор RISC-V, функциональная модель, поддерживающая базовый набор инструкций RV32I.
+> **rvdash** - функциональная RISC-V модель, поддерживающая базовый набор инструкций RV32I.
+> **rvdashSim** - cимулятор RISC-V, поддерживающий базовый набор инструкций RV32I.
 
 > Полное название **RISC-V Dash** выбрано как у пони **Rainbow Dash** 
 > за такую же страсть к победе и стремление к успеху :D!
 
  
-![example](Pictures/rvdash.jpg)  
+![example](Pictures/rvdash.jpg) 
+
+
+ ### Пример программы
+```
+cat Hello.S
+```
+  ```
+  .global _start      # Provide program starting address to linker
+
+# Setup the parameters to print hello rvdash
+# and then call Linux to do it.
+
+_start: addi  a0, x0, 1       # 1 = StdOut
+        la    a1, hellorvdash # load address of hellorvdash
+        addi  a2, x0, 15      # length of string
+        addi  a7, x0, 64      # linux write system call
+        ecall                 # Call linux to output the string
+
+# Setup the parameters to exit the program
+# and then call Linux to do it.
+
+        addi    a0, x0, 0   # Use 0 return code
+        addi    a7, x0, 93  # Service command code 93 terminates
+        ecall               # Call linux to terminate the program
+
+.data
+hellorvdash:      .ascii "Hello, rvdash!\n"
+
+  ```
+
+ ### Компиляция
+ 
+Для того, чтобы скомпилировать этот ассемблер нужен RISCV-тулчейн, а именно:
+
+1. Ассемблер **riscv64-unknown-linux-gnu-as**
+```
+riscv64-unknown-linux-gnu-as -march=rv32i -mabi=ilp32 Hello.S -o Hello.o 
+```
+2. Линкер **riscv64-unknown-linux-gnu-ld**
+```
+riscv64-unknown-linux-gnu-ld -march=rv32i -m elf32lriscv_ilp32  Hello.o -o Hello.elf
+```
+3. Образ памяти **riscv64-unknown-linux-gnu-objcopy**
+```
+ riscv64-unknown-linux-gnu-objcopy -O binary Hello.elf Hello.bin
+```
+
+Можно также посмотреть как лежит программа в памяти:
+```
+xxd -c 4 -b Hello.bin
+```
+```
+00000000: 00010011 00000101 00010000 00000000  .... // addi
+00000004: 10010111 00010101 00000000 00000000  .... // auipc
+00000008: 10010011 10000101 00000101 00000010  .... // addi
+0000000c: 00010011 00000110 11110000 00000000  .... // addi
+00000010: 10010011 00001000 00000000 00000100  .... // addi
+00000014: 01110011 00000000 00000000 00000000  s... // ecall
+00000018: 00010011 00000101 00000000 00000000  .... // addi
+0000001c: 10010011 00001000 11010000 00000101  .... // addi
+00000020: 01110011 00000000 00000000 00000000  s... // ecall
+...
+00001020: 00000000 00000000 00000000 00000000  ....
+00001024: 01001000 01100101 01101100 01101100  Hell
+00001028: 01101111 00101100 00100000 01110010  o, r
+0000102c: 01110110 01100100 01100001 01110011  vdas
+00001030: 01101000 00100001 00001010           h!.
+
+```
+
+ ### Запуск
+ 
+ Симулятору rvdashSim отдаётся бинарный файл, а он его исполняет
+ ```
+ ./rvdashSim Hello.bin
+ ```
+ Результат выполнения:
+ ```
+ Hello, rvdash!
+ ```
+ Также в файл *trace.txt* генерируется трасса исполненения:
+ ```
+ cat trace.txt
+ ```
+ ```
+ ====================Simulation started====================
+addi X10, X0, 0x1
+X10 <- 0x1
+auipc X11, 0x1
+X11 <- 0x1004
+addi X11, X11, 0x20
+X11 <- 0x1024
+addi X12, X0, 0xf
+X12 <- 0xf
+addi X17, X0, 0x40
+X17 <- 0x40
+ecall write(1, 4132, 15)
+addi X10, X0, 0x0
+X10 <- 0x0
+addi X17, X0, 0x5d
+X17 <- 0x5d
+ecall exit(0)
+===================Simulation completed===================
+
+ ```
+ 
+ 
+ 
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
+ ### Сборка:  
+
+В корневой директории:
+
+```
+  $cmake -B build
+  $cd build/
+  $make
+```
+ 
+#### Симуляция
+
+Чтобы выполнить скомпилированную RISCV-тулчейном программу **Prog.bin** на *симуляторе rvdashSim* нужно в директории *build*:
+``` 
+  $./rvdashSim Prog.bin
+``` 
+
+ * Трасса исполнения будет записана в файл **trace.txt** в директории *build*
+
+
+#### Тестирование
+
+Для запуска тестов должны быть установлены и находиться в **PATH** следующие программы
+(либо запуск происходит в контейнере, где они есть :) ):
+
+Для компиляции тестов:
+* **riscv64-unknown-linux-gnu-as**
+* **riscv64-unknown-linux-gnu-ld**
+* **riscv64-unknown-linux-gnu-objcopy**
+
+Для проверки трасс:
+* **FileCheck**
+
+Чтобы запустить *тестирование модели rvdash* нужно, находясь в *build*:  
+
+```
+  $cd Test/
+  $./rvdashTests
+```
+С использованием тестового фреймворка **GoogleTest** будут запущены тесты из "rvdash/Test/rvdashTests/Data". Результаты тестирования будут на экране.
+
+```
+...
+[ RUN      ] Test_rvdash.Test44
+[       OK ] Test_rvdash.Test44 (3 ms)
+[----------] 44 tests from Test_rvdash (165 ms total)
+
+
+[==========] 45 tests from 2 test suites ran. (440 ms total)
+[  PASSED  ] 45 tests.
+```
+ 

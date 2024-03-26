@@ -9,10 +9,10 @@ set(SOURCE_EXE ./main/main.cpp
 
 include_directories(include)
 
-add_executable(main ${SOURCE_EXE})
+add_executable(rvdashSim ${SOURCE_EXE})
 
 add_subdirectory(lib/Memory)
 add_subdirectory(lib/rvdash)
 add_subdirectory(Test)
 
-target_link_libraries(main rvdash)
+target_link_libraries(rvdashSim rvdash)

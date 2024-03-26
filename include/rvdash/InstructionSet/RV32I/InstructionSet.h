@@ -438,7 +438,7 @@ public:
     int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto ResultAddr = Rs1Value + Imm;
     Register<Instruction::Sz> Result;
-    Set.LogFile << "lb "
+    Set.LogFile << "lbu "
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
@@ -459,7 +459,7 @@ public:
     int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto ResultAddr = Rs1Value + Imm;
     Register<Instruction::Sz> Result;
-    Set.LogFile << "lh "
+    Set.LogFile << "lhu "
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
@@ -506,7 +506,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ Instruction::Sz / 2, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 2, Result);
     Result = signExtend<Instruction::Sz / 2>(Result.to_ulong());
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
@@ -528,7 +528,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ Instruction::Sz, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 4, Result);
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
@@ -544,14 +544,15 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    int Imm = signExtend<7>(Instr.extractImm_11_5());
+    int Imm = signExtend<12>(Instr.extractImm_S());
     auto ResultAddr = Rs1Value + Imm;
     Set.LogFile << "sb "
                 << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().store(ResultAddr, /* Size */ 1, Registers->getRegister(Rs2),
-                          Set.LogFile);
+    Set.getMemory().store(
+        ResultAddr, /* Size */ 1,
+        std::bitset<8>(Registers->getRegister(Rs2).to_ulong()), Set.LogFile);
 #ifdef DEBUG
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
     Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
@@ -565,14 +566,15 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    int Imm = signExtend<7>(Instr.extractImm_11_5());
+    int Imm = signExtend<12>(Instr.extractImm_S());
     auto ResultAddr = Rs1Value + Imm;
     Set.LogFile << "sh "
                 << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().store(ResultAddr, /* Size */ Instruction::Sz / 2,
-                          Registers->getRegister(Rs2), Set.LogFile);
+    Set.getMemory().store(
+        ResultAddr, /* Size */ 2,
+        std::bitset<16>(Registers->getRegister(Rs2).to_ulong()), Set.LogFile);
 #ifdef DEBUG
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
     Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
@@ -586,14 +588,14 @@ public:
     auto Rs1 = Instr.extractRs1();
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
-    int Imm = signExtend<7>(Instr.extractImm_11_5());
+    int Imm = signExtend<12>(Instr.extractImm_S());
     auto ResultAddr = Rs1Value + Imm;
     Set.LogFile << "sw "
                 << "X" << int(Rs2) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().store(ResultAddr, /* Size */ Instruction::Sz,
-                          Registers->getRegister(Rs2), Set.LogFile);
+    Set.getMemory().store(ResultAddr, /* Size */ 4, Registers->getRegister(Rs2),
+                          Set.LogFile);
 #ifdef DEBUG
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
     Set.LogFile << "Debug: " << std::dec << "rs1 (X" << int(Rs1)
@@ -610,11 +612,11 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BEQ");
+      failWithError("Misaligned BEQ : " + std::to_string(DistAddr));
     Set.LogFile << "beq "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -634,11 +636,11 @@ public:
     auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     auto Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BNE");
+      failWithError("Misaligned BNE: " + std::to_string(DistAddr));
     Set.LogFile << "bne "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -658,11 +660,11 @@ public:
     int Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     int Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BLT");
+      failWithError("Misaligned BLT: " + std::to_string(DistAddr));
     Set.LogFile << "blt "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -682,11 +684,11 @@ public:
     int Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     int Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BGE");
+      failWithError("Misaligned BGE: " + std::to_string(DistAddr));
     Set.LogFile << "bge "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -706,11 +708,11 @@ public:
     unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     unsigned Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BLTU");
+      failWithError("Misaligned BLTU: " + std::to_string(DistAddr));
     Set.LogFile << "bltu "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -730,11 +732,11 @@ public:
     unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto Rs2 = Instr.extractRs2();
     unsigned Rs2Value = Registers->getRegister(Rs2).to_ulong();
-    int Imm = signExtend<13>(Instr.extractImm_J() << 1);
+    int Imm = signExtend<13>(Instr.extractImm_B() << 1);
     auto OldPc = Registers->getNamedRegister("pc");
     auto DistAddr = OldPc.to_ulong() + Imm - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned BGEU");
+      failWithError("Misaligned BGEU: " + std::to_string(DistAddr));
     Set.LogFile << "bgeu "
                 << "X" << int(Rs1) << ", X" << int(Rs2) << ", 0x" << std::hex
                 << Imm << "\n";
@@ -757,12 +759,12 @@ public:
     auto OldPc = Registers->getNamedRegister("pc");
     auto RdValue = OldPc.to_ulong() + Instruction::Sz_b;
     auto DistAddr = Imm - Instruction::Sz_b;
-    Registers->setRegister(Rd, RdValue, Set.LogFile);
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned JAL");
+      failWithError("Misaligned JAL: " + std::to_string(DistAddr));
     Set.LogFile << "jal "
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
     Set.LogFile << std::dec;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
     Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "jal from " << OldPc.to_ulong()
@@ -775,17 +777,17 @@ public:
     auto Rd = Instr.extractRd();
     int Imm = signExtend<12>(Instr.extractImm_11_0());
     auto Rs1 = Instr.extractRs1();
+    auto Rs1Value = Registers->getRegister(Rs1).to_ulong();
     auto OldPc = Registers->getNamedRegister("pc");
     auto RdValue = OldPc.to_ulong() + Instruction::Sz_b;
-    auto DistAddr = int(Imm + Registers->getRegister(Rs1).to_ulong()) / 2 * 2 -
-                    Instruction::Sz_b;
-    Registers->setRegister(Rd, RdValue, Set.LogFile);
+    auto DistAddr = (Imm + Rs1Value) / 2 * 2 - Instruction::Sz_b;
     if (DistAddr % Instruction::Sz_b != 0)
-      failWithError("Misaligned JALR");
+      failWithError("Misaligned JALR: " + std::to_string(DistAddr));
     Set.LogFile << "jalr "
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
     Registers->setNamedRegister("pc", DistAddr, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "jalr from " << OldPc.to_ulong()
@@ -798,11 +800,11 @@ public:
   template <typename InstrSetType>
   static void executeLUI(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    int Imm = signExtend<20>(Instr.extractImm_31_12());
+    int Imm = Instr.extractImm_31_12();
     Set.LogFile << "lui "
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
     Set.LogFile << std::dec;
-    Registers->setRegister(Rd, Imm, Set.LogFile);
+    Registers->setRegister(Rd, Imm << 12, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd) << ") = " << Imm
                 << ", Imm = " << Imm << "\n";
@@ -812,14 +814,14 @@ public:
   template <typename InstrSetType>
   static void executeAUIPC(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
-    std::bitset<RegSz> ImmBitset = Instr.extractImm_31_12() << 12;
-    auto Imm = ImmBitset.to_ulong();
+    int AsmImm = Instr.extractImm_31_12();
+    auto Imm = AsmImm << 12;
     auto OldPc = Registers->getNamedRegister("pc").to_ulong();
     auto RdValue = OldPc + Imm;
-    Registers->setRegister(Rd, RdValue, Set.LogFile);
     Set.LogFile << "auipc "
-                << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "\n";
+                << "X" << int(Rd) << ", " << std::hex << "0x" << AsmImm << "\n";
     Set.LogFile << std::dec;
+    Registers->setRegister(Rd, RdValue, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "auipc addr = " << OldPc
                 << ", Rd = " << RdValue << "\n";

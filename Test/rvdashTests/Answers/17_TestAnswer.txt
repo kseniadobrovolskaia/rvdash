@@ -1,0 +1,3 @@
+CHECK: Changed memory bytes [0x68, 0x69]
+CHECK: New bytes:
+CHECK: 10000001

@@ -1,0 +1,1 @@
+CHECK: pc <- 0xc
