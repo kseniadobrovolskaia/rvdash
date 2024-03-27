@@ -1,5 +1,4 @@
 #include "Error.h"
-#include "rvdash/InstructionSet/M/InstructionSet.h"
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
 #include "rvdash/Memory/Memory.h"
 

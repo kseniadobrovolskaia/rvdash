@@ -4,8 +4,8 @@ project(rvdash)
 
 add_compile_options(-Wall -std=c++20 -pedantic -Wextra -fstack-usage -fexceptions -ggdb)
 
-set(SOURCE_EXE ./main/main.cpp
-               ./main/Error.cpp)
+set(SOURCE_EXE main/main.cpp
+               main/Error.cpp)
 
 include_directories(include)
 

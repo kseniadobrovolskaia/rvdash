@@ -15,6 +15,8 @@
 [1. Пример использования симулятора](#1)
 
 Компиляция простого ассемблера
+
+
 Запуск на симуляторе
 
 [2. Сборка ](#2)
@@ -43,10 +45,10 @@ cat Hello.S
 # and then call Linux to do it.
 
 _start: addi  a0, x0, 1       # 1 = StdOut
-        la    a1, hellorvdash # load address of hellorvdash
-        addi  a2, x0, 15      # length of string
-        addi  a7, x0, 64      # linux write system call
-        ecall                 # Call linux to output the string
+          la    a1, hellorvdash # load address of hellorvdash
+          addi  a2, x0, 15      # length of string
+          addi  a7, x0, 64      # linux write system call
+          ecall                 # Call linux to output the string
 
 # Setup the parameters to exit the program
 # and then call Linux to do it.

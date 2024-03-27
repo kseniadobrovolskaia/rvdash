@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
 project(tests)
 
-execute_process(COMMAND chmod +x ../Test/TestGen.bash)
-execute_process(COMMAND ../Test/TestGen.bash)
+execute_process(COMMAND chmod +x ${CMAKE_SOURCE_DIR}/Test/TestGen.bash)
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash)
+
 
 # GoogleTest requires at least C++14
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -22,7 +23,7 @@ add_compile_options(-Wall -std=c++2a -fexceptions)
 
 enable_testing()
 
-include_directories(../include)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(
   rvdashTests

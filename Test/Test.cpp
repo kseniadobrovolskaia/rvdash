@@ -1,19 +1,31 @@
-#include "RunTests.hpp"
+#include "RunTests.h"
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <string>
 
-static auto getNameResults(unsigned NumTest) {
-  const char *Dir = "../../Test/rvdashTests/Results/";
-  const char *File = "_TestResults.txt";
-  return Dir + std::to_string(NumTest) + File;
+const std::string getNameResults(unsigned NumTest, const std::string Dir) {
+  const auto ResultDir = Dir + "/Results/";
+  const auto File = "_TestResults.txt";
+  return ResultDir + std::to_string(NumTest) + File;
 }
 
-static auto getNameAnswers(unsigned NumTest) {
-  const char *Dir = "../../Test/rvdashTests/Answers/";
-  const char *File = "_TestAnswer.txt";
-  return Dir + std::to_string(NumTest) + File;
+const std::string getNameAnswers(unsigned NumTest, const std::string Dir) {
+  const auto AnswerDir = Dir + "/Answers/";
+  const auto File = "_TestAnswer.txt";
+  return AnswerDir + std::to_string(NumTest) + File;
+}
+
+const std::string getNameData(unsigned NumTest, const std::string Dir) {
+  const auto DataDir = Dir + "/Data/";
+  const auto File = "_TestData.bin";
+  return DataDir + std::to_string(NumTest) + File;
+}
+
+const std::string getNameAsm(unsigned NumTest, const std::string Dir) {
+  const auto DataDir = Dir + "/Data/";
+  const auto File = "_TestData.S";
+  return DataDir + std::to_string(NumTest) + File;
 }
 
 /**
@@ -21,17 +33,15 @@ static auto getNameAnswers(unsigned NumTest) {
  *                  finds the necessary execution elements (writes to
  *                  registers or memory) in the trace.
  */
-::testing::AssertionResult IsEqual(unsigned Name) {
-  static unsigned NumTest = 0;
-  NumTest++;
-  auto NameAnswer = getNameAnswers(NumTest);
-  auto NameResults = getNameResults(NumTest);
+::testing::AssertionResult IsEqual(unsigned NumTest,
+                                   const std::string CurrTestDir) {
+  auto NameAnswer = getNameAnswers(NumTest, CurrTestDir);
+  auto NameResult = getNameResults(NumTest, CurrTestDir);
 
-  std::string Command = "cat " + NameResults + " | FileCheck " + NameAnswer;
-  auto Result = system(Command.c_str());
-  auto RmAsm = "rm ../../Test/rvdashTests/Data/" + std::to_string(NumTest) +
-               "_TestData.bin";
-  system(RmAsm.c_str());
+  std::string CheckCmd = "cat " + NameResult + " | FileCheck " + NameAnswer;
+  auto Result = system(CheckCmd.c_str());
+  auto BinRmCmd = "rm " + getNameData(NumTest, CurrTestDir);
+  system(BinRmCmd.c_str());
   if (Result != 0) {
     return ::testing::AssertionFailure()
            << "The required trace elements were not found";
@@ -40,27 +50,47 @@ static auto getNameAnswers(unsigned NumTest) {
   }
 }
 
-//--------------------------------------RUN_rvdash---------------------------------------
-
 /**
- * @brief TEST(RunTests, Test0) - This function is not a test.
- *                                It starts the compilation and generation
- *                                of all traces (fill files in "Results"
- *                                directiry.
+ * @brief TEST(CompileTests, Test0) - This function is not a test.
+ *                                    It compiles all assembly tests into
+ *                                    binary files ready for execution on
+ *                                    the model.
  */
-TEST(RunTests, Test0) { RunTests(); }
-
-//-------------------------------------RVDASH_TESTS--------------------------------------
-
-#define ADD_TEST(Num)                                                          \
-  TEST(Test_rvdash, Test##Num) { EXPECT_TRUE(IsEqual(Num)); }
+TEST(CompileTests, Test0) {
+  const std::string NameResult = "Comp.log";
+  std::ofstream ResultFile(NameResult);
+  if (!ResultFile.is_open())
+    rvdash::failWithError("Can't open file " + NameResult);
+  compileAllTests(ResultFile);
+  // This file is needed to print error messages into it during
+  // test compilation. If any of the tests compiled with assembler,
+  // linker or objcopy errors, then this file will contain a record
+  // of these errors. Thus, if the file is empty (that is, Position == 0),
+  // then compilation of all files was successful.
+  auto Position = ResultFile.tellp();
+  ResultFile.close();
+  system(std::string("cat " + NameResult).c_str());
+  system(std::string("rm " + NameResult).c_str());
+  EXPECT_TRUE(Position == 0);
+}
 
 /**
  * @brief TEST - Tests.
  *               Expects to find the necessary elements in the trace.
  *
  */
+#define ADD_TEST(Num, TestsName)                                               \
+  TEST(TestsName, Test##Num) {                                                 \
+    auto CurrTestDir = TestsName##TestsDir;                                    \
+    auto NameData = getNameData(Num, CurrTestDir);                             \
+    auto NameResult = getNameResults(Num, CurrTestDir);                        \
+    runOneTest(NameData, NameResult);                                          \
+    EXPECT_TRUE(IsEqual(Num, CurrTestDir));                                    \
+  }
 
-#include "GenTests.h"
+//-------------------------------------RVDASH_TESTS--------------------------------------
+#include "rvdashTests/GenTests.h"
+//------------------------------RVDASH_ERROR_HANDLING_TESTS------------------------------
+#include "ErrorHandlingTests/GenTests.h"
 
 #undef ADD_TEST

@@ -14,10 +14,6 @@
 #include <vector>
 
 #include "Error.h"
-#include "magic_enum.hpp"
-
-
-
 
 namespace rvdash {
 

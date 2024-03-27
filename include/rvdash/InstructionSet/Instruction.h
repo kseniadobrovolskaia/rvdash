@@ -66,8 +66,8 @@ struct Instruction {
       : Bits(Ins), Type(T), Ex(Ext){};
 
   void dump(std::ostream &Stream) const {
-    Stream << "Extension: " << magic_enum::enum_name(Ex)
-           << ", Type: " << magic_enum::enum_name(Type) << "\n"
+    Stream << "Extension: " << static_cast<int>(Ex)
+           << ", Type: " << static_cast<int>(Type) << "\n"
            << "Bits: " << Bits << "\n";
   }
 
