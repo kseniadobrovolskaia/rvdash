@@ -104,15 +104,17 @@ std::ostream &operator<<(std::ostream &Stream, const Page<PageSz> &Pg) {
  */
 template <unsigned AddrSz, unsigned PageSz = 320> class Memory {
 
+  unsigned long long RamSize;
   std::set<Page<PageSz>> Pages;
 
 public:
-  Memory() {};
-  ~Memory() {};
+  Memory(unsigned long long RamSz) : RamSize(RamSz){};
+  Memory() : RamSize(1ull << 20){};
 
   constexpr static unsigned short getAddrSpaceSz() { return AddrSz; }
   constexpr static unsigned short getPageSz() { return PageSz; }
   const std::set<Page<PageSz>> &getPages() const { return Pages; }
+  void setRamSize(unsigned long long Ram) { RamSize = Ram; }
 
   template <typename RegisterType>
   void load(unsigned long long Addr, unsigned long long Size,
@@ -255,8 +257,10 @@ private:
   }
 
   void validate(unsigned long long Addr, unsigned long long Size) {
+    if (Addr >= RamSize)
+      failWithError("Address exceeds ram size " + std::to_string(RamSize));
     if (Addr >= (1ull << AddrSz))
-      failWithError("Address exceeds address space size " +
+      failWithError("Address exceeds addr space size " +
                     std::to_string(1ull << AddrSz));
     if (!isAllocated(Addr, Size))
       allocate(Addr, Size);

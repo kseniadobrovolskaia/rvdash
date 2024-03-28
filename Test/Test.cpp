@@ -50,28 +50,23 @@ const std::string getNameAsm(unsigned NumTest, const std::string Dir) {
   }
 }
 
-/**
- * @brief TEST(CompileTests, Test0) - This function is not a test.
- *                                    It compiles all assembly tests into
- *                                    binary files ready for execution on
- *                                    the model.
- */
-TEST(CompileTests, Test0) {
-  const std::string NameResult = "Comp.log";
-  std::ofstream ResultFile(NameResult);
-  if (!ResultFile.is_open())
-    rvdash::failWithError("Can't open file " + NameResult);
-  compileAllTests(ResultFile);
+static void compileTest(const std::string CurrTestDir, unsigned NumTest) {
+  const std::string NameLog = "Compile.log";
+  std::ofstream LogFile(NameLog);
+  if (!LogFile.is_open())
+    rvdash::failWithError("Can't open file " + NameLog);
+  compileOneTest(CurrTestDir, NumTest, LogFile);
   // This file is needed to print error messages into it during
-  // test compilation. If any of the tests compiled with assembler,
+  // test compilation. If test compiled with assembler,
   // linker or objcopy errors, then this file will contain a record
   // of these errors. Thus, if the file is empty (that is, Position == 0),
-  // then compilation of all files was successful.
-  auto Position = ResultFile.tellp();
-  ResultFile.close();
-  system(std::string("cat " + NameResult).c_str());
-  system(std::string("rm " + NameResult).c_str());
+  // then compilation was successful.
+  auto Position = LogFile.tellp();
+  LogFile.close();
+  system(std::string("cat " + NameLog).c_str());
+  system(std::string("rm " + NameLog).c_str());
   EXPECT_TRUE(Position == 0);
+  EXPECT_TRUE(4);
 }
 
 /**
@@ -82,6 +77,7 @@ TEST(CompileTests, Test0) {
 #define ADD_TEST(Num, TestsName)                                               \
   TEST(TestsName, Test##Num) {                                                 \
     auto CurrTestDir = TestsName##TestsDir;                                    \
+    compileTest(CurrTestDir, Num);                                             \
     auto NameData = getNameData(Num, CurrTestDir);                             \
     auto NameResult = getNameResults(Num, CurrTestDir);                        \
     runOneTest(NameData, NameResult);                                          \

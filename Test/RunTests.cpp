@@ -1,4 +1,5 @@
 #include "RunTests.h"
+#include "rvdash/InstructionSet/CPU.h"
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
 #include "rvdash/Memory/Memory.h"
 
@@ -59,6 +60,26 @@ static void compileAsm(const std::string NameAsm, const std::string NameData) {
 }
 
 /**
+ * @brief compileOneTest - it compile assembly from one test and the
+ *                         compilation results (errors) are
+ *                         written to the "LogFile".
+ */
+void compileOneTest(const std::string CurrTestDir, unsigned NumTest,
+                    std::ostream &LogFile) {
+  auto NameData = getNameData(NumTest, CurrTestDir);
+  auto NameAsm = getNameAsm(NumTest, CurrTestDir);
+  try {
+    compileAsm(NameAsm, NameData);
+  } catch (std::exception &Ex) {
+    std::string ErrMess = "\nError in compilation " + std::to_string(NumTest) +
+                          " test"
+                          " from " +
+                          CurrTestDir + ":\n" + Ex.what();
+    LogFile << ErrMess;
+  }
+}
+
+/**
  * @brief runOneTest - it run binary on the rvdash model and the
  *                     simulation results (traces) are
  *                     written to the "Results" directory.
@@ -75,41 +96,4 @@ void runOneTest(const std::string NameData, const std::string NameResult) {
       rvdash::failWithError("Can't open file " + NameResult);
     ResultFile << ErrMess;
   }
-}
-
-/**
- * @brief compileTestSuite - it compile assembly from one testing suite.
- */
-static void compileTestSuite(const std::string CurrTestDir, unsigned CountTests,
-                             std::ostream &ResultFile) {
-  for (unsigned NumTest = 1; NumTest < CountTests; ++NumTest) {
-    auto NameData = getNameData(NumTest, CurrTestDir);
-    auto NameAsm = getNameAsm(NumTest, CurrTestDir);
-    try {
-      compileAsm(NameAsm, NameData);
-    } catch (std::exception &Ex) {
-      std::string ErrMess = "\nError in compilation " +
-                            std::to_string(NumTest) +
-                            " test"
-                            " from " +
-                            CurrTestDir + ":\n" + Ex.what();
-      ResultFile << ErrMess;
-    }
-  }
-}
-
-/**
- * @brief compileAllTests - this function compile all assembly test suites.
- */
-void compileAllTests(std::ostream &ResultFile) {
-
-  // Compile rvdashTests
-  unsigned CountTests = 45;
-  std::string CurrTestDir = rvdashTestsDir;
-  compileTestSuite(CurrTestDir, CountTests, ResultFile);
-
-  // Compile ErrorHandlingTests
-  CountTests = 4;
-  CurrTestDir = ErrorHandlingTestsDir;
-  compileTestSuite(CurrTestDir, CountTests, ResultFile);
 }
