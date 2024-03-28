@@ -3,7 +3,8 @@
 
 #include <string>
 
-void compileAllTests(std::ostream &ResultFile);
+void compileOneTest(const std::string CurrTestDir, unsigned NumTest,
+                    std::ostream &LogFile);
 void runOneTest(const std::string NameData, const std::string NameResult);
 
 namespace rvdash {

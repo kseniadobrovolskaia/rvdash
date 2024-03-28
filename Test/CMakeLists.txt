@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(tests)
 
 execute_process(COMMAND chmod +x ${CMAKE_SOURCE_DIR}/Test/TestGen.bash)
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash)
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash ${CMAKE_SOURCE_DIR}/Test)
 
 
 # GoogleTest requires at least C++14
