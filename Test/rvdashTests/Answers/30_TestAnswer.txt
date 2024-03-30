@@ -1,1 +1,2 @@
+CHECK: bltu
 CHECK: pc <- 0xc

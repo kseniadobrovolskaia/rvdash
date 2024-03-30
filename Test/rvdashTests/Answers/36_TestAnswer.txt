@@ -1,1 +1,2 @@
+CHECK: add
 CHECK: X10 <- 0x5

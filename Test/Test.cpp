@@ -50,23 +50,18 @@ const std::string getNameAsm(unsigned NumTest, const std::string Dir) {
   }
 }
 
-static void compileTest(const std::string CurrTestDir, unsigned NumTest) {
-  const std::string NameLog = "Compile.log";
-  std::ofstream LogFile(NameLog);
-  if (!LogFile.is_open())
-    rvdash::failWithError("Can't open file " + NameLog);
-  compileOneTest(CurrTestDir, NumTest, LogFile);
-  // This file is needed to print error messages into it during
+static void compileTest(const std::string CurrTestDir, unsigned NumTest,
+                        std::ostream &ResultFile) {
+  compileOneTest(CurrTestDir, NumTest, ResultFile);
+  // This file is needed here to print error messages into during
   // test compilation. If test compiled with assembler,
   // linker or objcopy errors, then this file will contain a record
   // of these errors. Thus, if the file is empty (that is, Position == 0),
   // then compilation was successful.
-  auto Position = LogFile.tellp();
-  LogFile.close();
-  system(std::string("cat " + NameLog).c_str());
-  system(std::string("rm " + NameLog).c_str());
-  EXPECT_TRUE(Position == 0);
-  EXPECT_TRUE(4);
+  if (CurrTestDir != ErrorHandlingTestsDir) {
+    auto Position = ResultFile.tellp();
+    EXPECT_TRUE(Position == 0);
+  }
 }
 
 /**
@@ -77,10 +72,14 @@ static void compileTest(const std::string CurrTestDir, unsigned NumTest) {
 #define ADD_TEST(Num, TestsName)                                               \
   TEST(TestsName, Test##Num) {                                                 \
     auto CurrTestDir = TestsName##TestsDir;                                    \
-    compileTest(CurrTestDir, Num);                                             \
     auto NameData = getNameData(Num, CurrTestDir);                             \
     auto NameResult = getNameResults(Num, CurrTestDir);                        \
-    runOneTest(NameData, NameResult);                                          \
+    std::ofstream ResultFile(NameResult);                                      \
+    if (!ResultFile.is_open())                                                 \
+      rvdash::failWithError("Can't open file " + NameResult);                  \
+    compileTest(CurrTestDir, Num, ResultFile);                                 \
+    runOneTest(NameData, ResultFile);                                          \
+    ResultFile.close();                                                        \
     EXPECT_TRUE(IsEqual(Num, CurrTestDir));                                    \
   }
 

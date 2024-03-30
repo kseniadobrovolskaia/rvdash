@@ -1,1 +1,2 @@
+CHECK: slti
 CHECK: X13 <- 0x1

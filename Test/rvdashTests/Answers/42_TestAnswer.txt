@@ -1,1 +1,2 @@
+CHECK: sra
 CHECK: X13 <- 0xffffffff

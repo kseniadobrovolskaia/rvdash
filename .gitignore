@@ -1,3 +1,7 @@
 build
+
 Test/rvdashTests/Results
+Test/rvdashTests/GenTests.h
+
 Test/ErrorHandlingTests/Results
+Test/ErrorHandlingTests/GenTests.h

@@ -1,1 +1,2 @@
+CHECK: lui
 CHECK: X17 <- 0x135000

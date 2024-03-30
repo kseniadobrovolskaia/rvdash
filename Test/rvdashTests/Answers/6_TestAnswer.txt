@@ -1,1 +1,2 @@
+CHECK: slli
 CHECK: X13 <- 0xffffff70

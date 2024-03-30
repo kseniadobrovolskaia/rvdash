@@ -1,1 +1,2 @@
+CHECK: sltu
 CHECK: X13 <- 0x0

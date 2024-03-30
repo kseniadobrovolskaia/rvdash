@@ -1,1 +1,2 @@
+CHECK: srai
 CHECK: X13 <- 0xffffffff

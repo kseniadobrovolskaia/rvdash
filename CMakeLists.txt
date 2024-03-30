@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.14)
 
 project(rvdash)
 
-add_compile_options(-Wall -std=c++20 -pedantic -Wextra -fstack-usage -fexceptions -ggdb)
+add_compile_options(-std=c++20 -ggdb)
 
 set(SOURCE_EXE main/main.cpp
-               main/Error.cpp)
+               main/Error.cpp
+   )
 
-include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(rvdashSim ${SOURCE_EXE})
 

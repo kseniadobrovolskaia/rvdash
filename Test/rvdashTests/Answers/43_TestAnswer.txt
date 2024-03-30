@@ -1,1 +1,2 @@
+CHECK: slt
 CHECK: X13 <- 0x1

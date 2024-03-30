@@ -12,10 +12,10 @@ RV32IInstrDecoder &RV32IInstrDecoder::getDecoderInstance() {
 
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
-std::shared_ptr<RegistersSet<RegSz>> RV32IInstrExecutor::Registers;
+std::shared_ptr<RV32IRegistersSet> RV32IInstrExecutor::Registers;
 
 RV32IInstrExecutor &RV32IInstrExecutor::getExecutorInstance(
-    std::shared_ptr<RegistersSet<RegSz>> Regs) {
+    std::shared_ptr<RV32IRegistersSet> Regs) {
   static RV32IInstrExecutor SingleExecutor(Regs);
   RV32IInstrExecutor::Registers = Regs;
   return SingleExecutor;

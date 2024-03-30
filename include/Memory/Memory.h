@@ -22,9 +22,7 @@ template <unsigned PageSz> struct Page {
   unsigned long long FirstAddr;
   mutable std::bitset<PageSz> Space;
 
-  Page(unsigned long long First) : FirstAddr(First) {
-    Space = 0;
-  };
+  Page(unsigned long long First) : FirstAddr(First) { Space = 0; };
 
   unsigned size() const { return PageSz; }
   const std::bitset<PageSz> &getSpace() const { return Space; }
@@ -75,16 +73,16 @@ bool operator<(const Page<PageSz> &Lhs, const Page<PageSz> &Rhs) {
   return Lhs.FirstAddr < Rhs.FirstAddr;
 }
 
-template <unsigned PageSz>
-bool operator<(const std::_Rb_tree_const_iterator<rvdash::Page<PageSz>> &Lhs,
-               const std::_Rb_tree_const_iterator<rvdash::Page<PageSz>> &Rhs) {
-  return (*Lhs).FirstAddr < (*Rhs).FirstAddr;
-}
+// This is done for iterators in the std::set in Memory
+template <typename Pg>
+concept HasFirstAddrPtr = requires(Pg P) {
+  P->FirstAddr;
+};
 
-template <unsigned PageSz>
-bool operator<(std::_Rb_tree_iterator<rvdash::Page<PageSz>> &Lhs,
-               std::_Rb_tree_iterator<rvdash::Page<PageSz>> &Rhs) {
-  return (*Lhs).FirstAddr < (*Rhs).FirstAddr;
+template <typename T>
+requires HasFirstAddrPtr<T>
+bool operator<(const T Lhs, const T Rhs) {
+  return Lhs->FirstAddr < Rhs->FirstAddr;
 }
 
 template <unsigned PageSz>
@@ -102,14 +100,14 @@ std::ostream &operator<<(std::ostream &Stream, const Page<PageSz> &Pg) {
  *                       All public methods use an Addr and Size in bytes,
  *                       while private methods use bits.
  */
-template <unsigned AddrSz, unsigned PageSz = 320> class Memory {
+template <unsigned AddrSz, unsigned PageSz = 320 /* bits */> class Memory {
 
-  unsigned long long RamSize;
+  unsigned long long RamSize /* bytes */;
   std::set<Page<PageSz>> Pages;
 
 public:
-  Memory(unsigned long long RamSz) : RamSize(RamSz){};
-  Memory() : RamSize(1ull << 20){};
+  Memory(unsigned long long RamSz /* bytes */ = 1ull << 20 /* 1 MB */)
+      : RamSize(RamSz){};
 
   constexpr static unsigned short getAddrSpaceSz() { return AddrSz; }
   constexpr static unsigned short getPageSz() { return PageSz; }
@@ -241,7 +239,7 @@ private:
         LogFile << "\n";
       else
         LogFile << " ";
-      for (auto B = 8; B > 0; --B)
+      for (auto B = CHAR_BIT; B > 0; --B)
         LogFile << Bits[CntBytes * CHAR_BIT + B - 1];
     }
     LogFile << "\n\n";
@@ -257,7 +255,7 @@ private:
   }
 
   void validate(unsigned long long Addr, unsigned long long Size) {
-    if (Addr >= RamSize)
+    if (Addr >= RamSize * CHAR_BIT)
       failWithError("Address exceeds ram size " + std::to_string(RamSize));
     if (Addr >= (1ull << AddrSz))
       failWithError("Address exceeds addr space size " +
@@ -279,4 +277,3 @@ private:
 } // namespace rvdash
 
 #endif // MEMORY_H
-

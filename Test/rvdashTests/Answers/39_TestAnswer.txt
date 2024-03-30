@@ -1,1 +1,2 @@
+CHECK: and
 CHECK: X13 <- 0x25

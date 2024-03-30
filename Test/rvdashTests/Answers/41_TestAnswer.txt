@@ -1,1 +1,2 @@
+CHECK: slr
 CHECK: X13 <- 0x7ff

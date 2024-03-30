@@ -1,3 +1,4 @@
+CHECK: auipc
 CHECK: X3 <- 0x1000
 CHECK: X2 <- 0x12004
 CHECK: X1 <- 0x135008

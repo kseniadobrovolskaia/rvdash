@@ -1,7 +1,7 @@
 #include "Error.h"
-#include "rvdash/InstructionSet/CPU.h"
+#include "Memory/Memory.h"
+#include "rvdash/CPU.h"
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
-#include "rvdash/Memory/Memory.h"
 
 #include <fstream>
 #include <getopt.h>

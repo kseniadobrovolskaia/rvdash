@@ -1,1 +1,2 @@
+CHECK: xori
 CHECK: X13 <- 0x3ee

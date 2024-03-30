@@ -38,7 +38,7 @@
 Возьмём простой ассемблер, скомпилируем и запустим его на симуляторе.
 
 ```
-cat Hello.S
+$ cat Hello.S
 ```
   ```
   .global _start                    # Provide program starting address to linker
@@ -70,20 +70,20 @@ hellorvdash:      .ascii   "Hello, rvdash!\n"
 
 1. Ассемблер **riscv64-unknown-linux-gnu-as**
 ```
-riscv64-unknown-linux-gnu-as -march=rv32i -mabi=ilp32 Hello.S -o Hello.o 
+$ riscv64-unknown-linux-gnu-as -march=rv32i -mabi=ilp32 Hello.S -o Hello.o 
 ```
 2. Линкер **riscv64-unknown-linux-gnu-ld**
 ```
-riscv64-unknown-linux-gnu-ld -march=rv32i -m elf32lriscv_ilp32  Hello.o -o Hello.elf
+$ riscv64-unknown-linux-gnu-ld -march=rv32i -m elf32lriscv_ilp32  Hello.o -o Hello.elf
 ```
 3. Образ памяти **riscv64-unknown-linux-gnu-objcopy**
 ```
- riscv64-unknown-linux-gnu-objcopy -O binary Hello.elf Hello.bin
+$ riscv64-unknown-linux-gnu-objcopy -O binary Hello.elf Hello.bin
 ```
 
 Можно также посмотреть как лежит программа в памяти:
 ```
-xxd -c 4 -b Hello.bin
+$ xxd -c 4 -b Hello.bin
 ```
 ```
 00000000: 00010011 00000101 00010000 00000000  ....            // addi
@@ -108,7 +108,7 @@ xxd -c 4 -b Hello.bin
  
  Симулятору *rvdashSim* отдаётся бинарный файл, а он его исполняет
  ```
- ./rvdashSim   Hello.bin
+$ ./rvdashSim   Hello.bin
  ```
  Результатом выполнения является как трасса исполнения, так и вывод исполняемой программы:
  ```
@@ -145,10 +145,10 @@ ecall exit(0)
  
  Все доступные опции можно узнать:
  ```
- ./rvdashSim   --help
+$ ./rvdashSim   --help
  ```
 ```
-USAGE:   ./rvdashSim   [options]   <binary_file>
+USAGE:      ./rvdashSim   [options]   <binary_file>
 
 OPTIONS: 
 	    -h	 --help
@@ -158,17 +158,18 @@ OPTIONS:
 ```
 
 * **--help**, **-h** - распечатать справку
-* **--ram-size**, **-r** - задать размер виртуальной памяти (в Мегабайтах), она пока что вся произвольного доступа:)
-* **--program-counter**, **-p** - задать начальное значение регистра Program counter (в байтах). Это значение должно быть выровнено по размеру инструкции, то есть для RV32I должно быть кратно 4-м байтам.
-* **--trace-output**, **-t** - задать файл, для печати трассы исполнения.
+* **--ram-size**, **-r** - задать размер виртуальной памяти (в MB), она пока что вся произвольного доступа:). Значение по умолчанию 1 MB.
+* **--program-counter**, **-p** - задать начальное значение регистра Program counter (в байтах). Это число должно быть выровнено по размеру инструкции, то есть для RV32I должно быть кратно 4-м байтам. Значение по умолчанию 0.
+* **--trace-output**, **-t** - задать файл, для печати трассы исполнения. Без указания трасса печатается на экране.
 
 ### Запуск с использованием опций
  
  Симулятору *rvdashSim* отдаётся бинарный файл и опции в любом порядке:
  ```
- ./rvdashSim  --trace-output trace.txt   Hello.bin   --ram-size 1    -p 0
+$ ./rvdashSim  --trace-output trace.txt   Hello.bin   --ram-size 1    -p 0
  ```
  Результатом выполнения является сгенерированная в файл  **trace.txt** трасса и вывод исполняемой программы на экране:
+ 
  ```
 Hello, rvdash!
 ```
@@ -181,18 +182,18 @@ Hello, rvdash!
  ### Сборка
 
 ```
-  $git clone https://github.com/kseniadobrovolskaia/rvdash
-  $cd rvdash/
-  $cmake -B build
-  $cd build/
-  $make
+  $ git clone https://github.com/kseniadobrovolskaia/rvdash
+  $ cd rvdash/
+  $ cmake -B build
+  $ cd build/
+  $ make
 ```
  
 #### Симуляция
 
 Чтобы выполнить скомпилированную RISCV-тулчейном программу **Prog.bin** на *симуляторе rvdashSim* нужно в директории `build`:
 ``` 
-  $./rvdashSim   Prog.bin   -t trace.txt
+  $ ./rvdashSim   Prog.bin   -t trace.txt
 ``` 
 
 Трасса исполнения будет записана в файл **trace.txt** в директории `build`
@@ -217,20 +218,21 @@ Hello, rvdash!
 Чтобы запустить *тестирование модели rvdash* нужно, находясь в `build`:  
 
 ```
-  $cd Test/
-  $./rvdashTests
+  $ cd Test/
+  $ ./rvdashTests
 ```
-С использованием тестового фреймворка **GoogleTest** будут запущены тесты из `rvdash/Test/rvdashTests/Data`, `rvdash/Test/ErrorHandlingTests/Data`. Результаты тестирования будут на экране.
+С использованием тестового фреймворка **GoogleTest** будут запущены тесты из 
+`rvdash/Test/rvdashTests/Data`, `rvdash/Test/ErrorHandlingTests/Data`. Результаты тестирования будут на экране:
 
 ```
 ...
-[ RUN      ] Test_rvdash.Test44
-[       OK ] Test_rvdash.Test44 (3 ms)
-[----------] 44 tests from Test_rvdash (165 ms total)
+[ RUN      ] Test_rvdash.Test45
+[       OK ] Test_rvdash.Test45 (3 ms)
+[----------] 45 tests from Test_rvdash (165 ms total)
 
 
-[==========] 47 tests from 2 test suites ran. (440 ms total)
-[  PASSED  ] 47 tests.
+[==========] 51 tests from 2 test suites ran. (440 ms total)
+[  PASSED  ] 51 tests.
 ```
  
  

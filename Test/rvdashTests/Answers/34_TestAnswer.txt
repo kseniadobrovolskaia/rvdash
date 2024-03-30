@@ -1,1 +1,2 @@
+CHECK: jal
 CHECK: pc <- 0x4

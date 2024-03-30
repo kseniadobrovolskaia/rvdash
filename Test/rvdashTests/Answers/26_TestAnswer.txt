@@ -1,1 +1,2 @@
+CHECK: blt
 CHECK: pc <- 0xc

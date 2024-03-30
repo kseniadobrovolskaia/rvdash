@@ -1,1 +1,2 @@
+CHECK: bne
 CHECK: pc <- 0xc

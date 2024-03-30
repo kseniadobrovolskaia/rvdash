@@ -1,1 +1,2 @@
+CHECK: andi
 CHECK: X13 <- 0x25

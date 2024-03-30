@@ -1,1 +1,2 @@
+CHECK: bge
 CHECK-NOT: pc <- 0xc

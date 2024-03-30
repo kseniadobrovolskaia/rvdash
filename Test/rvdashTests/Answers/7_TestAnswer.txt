@@ -1,1 +1,2 @@
+CHECK: srli
 CHECK: X13 <- 0x7ff

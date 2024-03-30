@@ -125,8 +125,12 @@ struct Instruction {
     return ((Bits >> 25) & std::bitset<Sz>(0x3f)).to_ulong();
   }
 
-  uint8_t extractImm_11() const {
+  uint8_t extractImm_11_J() const {
     return ((Bits >> 20) & std::bitset<Sz>(0x1)).to_ulong();
+  }
+
+  uint8_t extractImm_11_B() const {
+    return ((Bits >> 7) & std::bitset<Sz>(0x1)).to_ulong();
   }
 
   uint8_t extractImm_12() const {
@@ -159,7 +163,7 @@ struct Instruction {
   uint32_t extractImm_B() const {
     std::bitset<4> Imm_4_1 = extractImm_4_1();
     std::bitset<6> Imm_10_5 = extractImm_10_5();
-    std::bitset<1> Imm_11 = extractImm_11();
+    std::bitset<1> Imm_11 = extractImm_11_B();
     std::bitset<1> Imm_12 = extractImm_12();
     std::bitset<12> Imm;
     for (auto Idx = 0; Idx < 4; ++Idx)
@@ -173,7 +177,7 @@ struct Instruction {
 
   uint32_t extractImm_J() const {
     std::bitset<10> Imm_10_1 = extractImm_10_1();
-    std::bitset<1> Imm_11 = extractImm_11();
+    std::bitset<1> Imm_11 = extractImm_11_J();
     std::bitset<8> Imm_19_12 = extractImm_19_12();
     std::bitset<1> Imm_20 = extractImm_20();
     std::bitset<20> Imm;

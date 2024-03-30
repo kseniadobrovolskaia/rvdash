@@ -5,7 +5,7 @@
 
 void compileOneTest(const std::string CurrTestDir, unsigned NumTest,
                     std::ostream &LogFile);
-void runOneTest(const std::string NameData, const std::string NameResult);
+void runOneTest(const std::string NameData, std::ostream &ResultFile);
 
 namespace rvdash {
 void failWithError(const std::string &Msg);

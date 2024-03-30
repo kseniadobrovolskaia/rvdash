@@ -1,1 +1,2 @@
+CHECK: xor
 CHECK: X13 <- 0x3ee

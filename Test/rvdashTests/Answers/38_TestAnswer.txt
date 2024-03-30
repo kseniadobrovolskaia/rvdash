@@ -1,1 +1,2 @@
+CHECK: or
 CHECK: X13 <- 0x37f

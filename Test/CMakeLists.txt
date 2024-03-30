@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(tests)
 
-execute_process(COMMAND chmod +x ${CMAKE_SOURCE_DIR}/Test/TestGen.bash)
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash ${CMAKE_SOURCE_DIR}/Test)
 
-
-# GoogleTest requires at least C++14
+# GoogleTest requires at least C++14, but for rvdash we need C++20
 set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
@@ -19,23 +16,27 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-add_compile_options(-Wall -std=c++2a -fexceptions)
+add_compile_options(-std=c++20)
 
 enable_testing()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable(
-  rvdashTests
-  
-  RunTests.cpp
-  Test.cpp
-)
-target_link_libraries(
-  rvdashTests
-  rvdash
-  GTest::gtest_main
-)
+add_custom_target(gen_tests
+                  ALL
+                  COMMAND chmod +x ${CMAKE_SOURCE_DIR}/Test/TestGen.bash
+                  COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash ${CMAKE_SOURCE_DIR}/Test
+                 )
+
+add_executable(rvdashTests
+               RunTests.cpp
+               Test.cpp
+              )
+
+target_link_libraries(rvdashTests
+                      rvdash
+                      GTest::gtest_main
+                     )
 
 include(GoogleTest)
 gtest_discover_tests(rvdashTests)

@@ -1,1 +1,2 @@
+CHECK: beq
 CHECK-NOT: pc <- 0xc

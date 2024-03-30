@@ -7,19 +7,12 @@
 #include "rvdash/InstructionSet/Instruction.h"
 #include "rvdash/InstructionSet/Registers.h"
 
-#define DEBUG
-#undef DEBUG
-
 namespace rvdash {
 
 //------------------------------------Extensions-----------------------------------------
 
 enum class Extensions {
   RV32I,
-  M,
-  A,
-  F,
-  D,
 };
 
 //------------------------------------ExtractPC------------------------------------------
@@ -99,7 +92,7 @@ public:
 
   /**
    * @brief extractPC - function to find the basic set and get the program
-   *                    counter using the concept HasPC
+   *                    counter using the concept HasPc
    */
   auto extractPC() {
     auto OptPC = (getPC<AddrSz>(static_cast<Exts *>(this)) ^ ...);
@@ -189,7 +182,7 @@ public:
       failWithError("Step is impossible");
     Register<Instruction::Sz> Cmd;
     // Fetch
-    Memory.load(PC->to_ulong(), /* Size */ Instruction::Sz / CHAR_BIT, Cmd);
+    Memory.load(PC->to_ulong(), /* Size */ Instruction::Sz_b, Cmd);
     // Decode
     auto [Instr, Func] = decode(Cmd);
     // Execute

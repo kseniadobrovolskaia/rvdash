@@ -24,9 +24,7 @@ namespace rvdash {
  *                             specific extension. Contains numbered and named
  *                             registers.
  */
-template <size_t Sz>
-using Register = std::bitset<Sz>;
-using RegName = unsigned;
+template <size_t Sz> using Register = std::bitset<Sz>;
 
 template <size_t Sz>
 Register<Sz> operator||(Register<Sz> Lhs, Register<Sz> Rhs) {
@@ -35,10 +33,10 @@ Register<Sz> operator||(Register<Sz> Lhs, Register<Sz> Rhs) {
 
 template <size_t Sz>
 class RegistersSet {
-
-  void logChange(RegName Reg, Register<Sz> NewValue,
-                 std::ostream &LogFile) const {
-    LogFile << SetName << std::dec << Reg << " <- 0x" << std::hex
+protected:
+  virtual void logChange(unsigned RegIdx, Register<Sz> NewValue,
+                         std::ostream &LogFile) const {
+    LogFile << SetName << std::dec << RegIdx << " <- 0x" << std::hex
             << NewValue.to_ulong() << "\n";
     LogFile << std::dec;
   }
@@ -49,52 +47,62 @@ class RegistersSet {
     LogFile << std::dec;
   }
 
+  virtual const Register<Sz> &operator[](unsigned RegIdx) const {
+    return OwnRegs.at(RegIdx);
+  }
+  virtual Register<Sz> &operator[](unsigned RegIdx) {
+    return OwnRegs.at(RegIdx);
+  }
+
 public:
   RegistersSet() {};
   RegistersSet(const char *Name, unsigned Count)
-      : SetName(Name), OwnRegs(Count) {
-    OwnRegs[0] = 0;
-  };
+      : SetName(Name), OwnRegs(Count){};
 
-  Register<Sz> &operator[](unsigned RegIdx) { return OwnRegs.at(RegIdx); }
-  Register<Sz> operator[](unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
+  virtual ~RegistersSet(){};
 
-  Register<Sz> getRegister(unsigned RegIdx) const { return OwnRegs.at(RegIdx); }
-
-  void setRegister(RegName Reg, Register<Sz> NewValue) {
-    if (strcmp(SetName, "X") == 0 && Reg == 0)
-      return;
-    OwnRegs.at(Reg) = NewValue;
+  virtual const Register<Sz> &getRegister(unsigned RegIdx) const {
+    return OwnRegs.at(RegIdx);
+  }
+  virtual Register<Sz> getRegister(unsigned RegIdx) {
+    return OwnRegs.at(RegIdx);
   }
 
-  void setRegister(RegName Reg, Register<Sz> NewValue, std::ostream &LogFile) {
-    setRegister(Reg, NewValue);
-    logChange(Reg, NewValue, LogFile);
+  virtual const Register<Sz> &getNamedRegister(const std::string &Name) const {
+    return NamedRegisters.at(Name);
   }
 
-  void addNamedRegister(const std::string &Name) {
+  virtual Register<Sz> &getNamedRegister(const std::string &Name) {
+    return NamedRegisters.at(Name);
+  }
+
+  virtual void setRegister(unsigned RegIdx, const Register<Sz> &NewValue) {
+    OwnRegs.at(RegIdx) = NewValue;
+  }
+
+  virtual void setRegister(unsigned RegIdx, const Register<Sz> &NewValue,
+                           std::ostream &LogFile) {
+    setRegister(RegIdx, NewValue);
+    logChange(RegIdx, NewValue, LogFile);
+  }
+
+  virtual void addNamedRegister(const std::string &Name) {
     NamedRegisters[Name] = 0;
   }
 
-  void setNamedRegister(const std::string &Name, Register<Sz> NewValue) {
+  virtual void setNamedRegister(const std::string &Name,
+                                const Register<Sz> &NewValue) {
     NamedRegisters.at(Name) = NewValue;
   }
 
-  void setNamedRegister(const std::string &Name, Register<Sz> NewValue,
-                        std::ostream &LogFile) {
+  virtual void setNamedRegister(const std::string &Name,
+                                const Register<Sz> &NewValue,
+                                std::ostream &LogFile) {
     NamedRegisters.at(Name) = NewValue;
     logChange(Name, NewValue, LogFile);
   }
 
-  const Register<Sz> &getNamedRegister(const std::string &Name) const {
-    return NamedRegisters.at(Name);
-  }
-
-  Register<Sz> &getNamedRegister(const std::string &Name) {
-    return NamedRegisters.at(Name);
-  }
-
-  void dump(std::ostream &Stream) const {
+  virtual void dump(std::ostream &Stream) const {
     Stream << "Registers Set:\n";
     if (NamedRegisters.size() != 0) {
       for (const auto &[Name, Reg] : NamedRegisters)
@@ -106,9 +114,9 @@ public:
              << OwnRegs[Idx].to_ulong() << "\n";
     Stream << std::dec;
   }
-  void print() const { dump(std::cout); }
+  virtual void print() const { dump(std::cout); }
 
-private:
+protected:
   const char *SetName;
   std::vector<Register<Sz>> OwnRegs;
   std::unordered_map<std::string, Register<Sz>> NamedRegisters;

@@ -1,7 +1,7 @@
 #include "RunTests.h"
-#include "rvdash/InstructionSet/CPU.h"
+#include "Memory/Memory.h"
+#include "rvdash/CPU.h"
 #include "rvdash/InstructionSet/RV32I/InstructionSet.h"
-#include "rvdash/Memory/Memory.h"
 
 #include <fstream>
 #include <iostream>
@@ -26,10 +26,10 @@ putProgramInBuffer(const std::string &ProgName) {
 
 template <size_t Sz>
 void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
-                     const std::string &LogFileName) {
+                     std::ostream &ResultFile) {
   Memory<Sz> Mem;
-  std::ofstream LogFile(LogFileName);
-  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet> InstructionSet(Mem, LogFile);
+  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet> InstructionSet(Mem,
+                                                                ResultFile);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
   Cpu.execute(0 /* pc */, Program);
 }
@@ -84,16 +84,13 @@ void compileOneTest(const std::string CurrTestDir, unsigned NumTest,
  *                     simulation results (traces) are
  *                     written to the "Results" directory.
  */
-void runOneTest(const std::string NameData, const std::string NameResult) {
+void runOneTest(const std::string NameData, std::ostream &ResultFile) {
   const unsigned AddrSpaceSz = 32;
   try {
     auto Program = rvdash::putProgramInBuffer(NameData);
-    rvdash::generateProcess<AddrSpaceSz>(Program, NameResult);
+    rvdash::generateProcess<AddrSpaceSz>(Program, ResultFile);
   } catch (std::exception &Ex) {
     std::string ErrMess = Ex.what();
-    std::ofstream ResultFile(NameResult);
-    if (!ResultFile.is_open())
-      rvdash::failWithError("Can't open file " + NameResult);
     ResultFile << ErrMess;
   }
 }

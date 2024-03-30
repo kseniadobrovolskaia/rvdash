@@ -1,1 +1,2 @@
+CHECK: ori
 CHECK: X13 <- 0x37f
