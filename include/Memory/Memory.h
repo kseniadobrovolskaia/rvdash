@@ -102,14 +102,16 @@ std::ostream &operator<<(std::ostream &Stream, const Page<PageSz> &Pg) {
  */
 template <unsigned AddrSz, unsigned PageSz = 320 /* bits */> class Memory {
 
+  unsigned long long RamStart /* bytes */;
   unsigned long long RamSize /* bytes */;
   std::set<Page<PageSz>> Pages;
 
 public:
-  Memory(unsigned long long RamSz /* bytes */ = 1ull << 20 /* 1 MB */)
-      : RamSize(RamSz){};
+  Memory(unsigned long long RamStrt /* bytes */ = 0,
+         unsigned long long RamSz /* bytes */ = 1ull << 17 /* 1 MB */)
+      : RamStart(RamStrt), RamSize(RamSz){};
 
-  constexpr static unsigned short getAddrSpaceSz() { return AddrSz; }
+  constexpr static unsigned short getAddrSz() { return AddrSz; }
   constexpr static unsigned short getPageSz() { return PageSz; }
   const std::set<Page<PageSz>> &getPages() const { return Pages; }
   void setRamSize(unsigned long long Ram) { RamSize = Ram; }
@@ -255,8 +257,11 @@ private:
   }
 
   void validate(unsigned long long Addr, unsigned long long Size) {
-    if (Addr >= RamSize * CHAR_BIT)
-      failWithError("Address exceeds ram size " + std::to_string(RamSize));
+    if (Addr >= (RamStart + RamSize) * CHAR_BIT || Addr < RamStart)
+      failWithError("Invalid memory access, address " + std::to_string(Addr) +
+                    " not available. Avalable addresses: [" +
+                    std::to_string(RamStart) + ", " +
+                    std::to_string(RamStart + RamSize) + "]");
     if (Addr >= (1ull << AddrSz))
       failWithError("Address exceeds addr space size " +
                     std::to_string(1ull << AddrSz));

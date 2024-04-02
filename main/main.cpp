@@ -1,7 +1,7 @@
 #include "Error.h"
 #include "Memory/Memory.h"
 #include "rvdash/CPU.h"
-#include "rvdash/InstructionSet/RV32I/InstructionSet.h"
+#include "rvdash/InstructionSet/InstructionSet.h"
 
 #include <fstream>
 #include <getopt.h>
@@ -114,7 +114,7 @@ void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
   Memory<Sz> Mem;
   if (RamSize.has_value())
     Mem.setRamSize(RamSize.value());
-  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet> InstructionSet(Mem, LogFile);
+  InstrSet<Memory<Sz>, RV32I::RV32IInstrSet> InstructionSet(Mem, LogFile);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
   Cpu.execute(Pc.value(), Program);
 }

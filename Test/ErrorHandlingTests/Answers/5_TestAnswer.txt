@@ -1,1 +1,1 @@
-CHECK: Address exceeds ram size
+CHECK: Invalid memory access

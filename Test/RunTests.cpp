@@ -1,7 +1,7 @@
 #include "RunTests.h"
 #include "Memory/Memory.h"
 #include "rvdash/CPU.h"
-#include "rvdash/InstructionSet/RV32I/InstructionSet.h"
+#include "rvdash/InstructionSet/InstructionSet.h"
 
 #include <fstream>
 #include <iostream>
@@ -28,8 +28,7 @@ template <size_t Sz>
 void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
                      std::ostream &ResultFile) {
   Memory<Sz> Mem;
-  InstrSet<Memory<Sz>, Sz, RV32I::RV32IInstrSet> InstructionSet(Mem,
-                                                                ResultFile);
+  InstrSet<Memory<Sz>, RV32I::RV32IInstrSet> InstructionSet(Mem, ResultFile);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
   Cpu.execute(0 /* pc */, Program);
 }

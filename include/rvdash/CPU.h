@@ -1,7 +1,7 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "rvdash/InstructionSet/InstructionSet.h"
+#include "rvdash/InstructionSet/Instruction.h"
 
 #define DEBUG
 #undef DEBUG
@@ -15,9 +15,7 @@ namespace rvdash {
  *                    a program into virtual memory to executing instructions
  *                    (this is the model hart).
  */
-template <typename MemoryType, typename InstrSetType,
-          size_t AddrSz = MemoryType::getAddrSpaceSz()>
-class CPU {
+template <typename MemoryType, typename InstrSetType> class CPU {
 
 private:
   MemoryType &VirtualMemory;
@@ -27,19 +25,16 @@ private:
 
 public:
   CPU(MemoryType &Mem, InstrSetType &E)
-      : VirtualMemory(Mem), ExtSet(E), LogFile(E.LogFile) {
-    if (AddrSz > MemoryType::getAddrSpaceSz())
-      failWithError("The requested address space size exceeds the size that "
-                    "virtual memory has");
-  }
+      : VirtualMemory(Mem), ExtSet(E), LogFile(E.LogFile) {}
 
   void dump() const { dump(LogFile); }
   void dump(std::ostream &Stream) const {
-    Stream << "\nCPU:\n";
+    Stream << "\nCPU:\n\n--------------------------------------------\n1. ";
     ExtSet.dump(Stream);
     std::ofstream File("Mem.dump");
     VirtualMemory.dump(File);
-    Stream << "Virtual memory dump in file Mem.dump\n";
+    Stream << "2. Virtual memory dump in file "
+              "Mem.dump\n--------------------------------------------\n";
   }
   void print() const { dump(std::cout); }
 
@@ -50,6 +45,16 @@ public:
       VirtualMemory.store(NumStore, /* Size */ 1, Byte);
       NumStore++;
     }
+  }
+
+  void storeByte(uint64_t Addr, const Register<CHAR_BIT> &Byte) const {
+    VirtualMemory.store(Addr, /* Size */ 1, Byte);
+  }
+
+  Register<CHAR_BIT> loadByte(uint64_t Addr) const {
+    Register<CHAR_BIT> Byte;
+    VirtualMemory.load(Addr, /* Size */ 1, Byte);
+    return Byte;
   }
 
   void execute(unsigned long long Pc,
@@ -69,7 +74,12 @@ public:
 
   void step() const { ExtSet.step(); }
   void increasePC() const { ExtSet.increasePC(); }
+  Register<InstrSetType::AddrSz> readPC() const { return ExtSet.readPC(); }
   void setPC(unsigned long long PcValue) const { ExtSet.setPC(PcValue); }
+  uint64_t readXReg(unsigned Reg) const { return ExtSet.readXReg(Reg); }
+  void setXReg(unsigned Reg, uint64_t NewValue) const {
+    ExtSet.setXReg(Reg, NewValue);
+  }
 };
 
 } // namespace rvdash

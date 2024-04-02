@@ -5,15 +5,9 @@
 #include <variant>
 
 #include "rvdash/InstructionSet/Instruction.h"
-#include "rvdash/InstructionSet/Registers.h"
+#include "rvdash/InstructionSet/RV32I/InstructionSet.h"
 
 namespace rvdash {
-
-//------------------------------------Extensions-----------------------------------------
-
-enum class Extensions {
-  RV32I,
-};
 
 //------------------------------------ExtractPC------------------------------------------
 
@@ -56,17 +50,17 @@ operator^(std::optional<std::tuple<Instruction, T1>> Lhs,
 
 //------------------------------------InstrSet-------------------------------------------
 
-template <typename InstrSetType>
-using ExecuteFuncType = void (*)(Instruction, InstrSetType &Set);
-
 /**
  * @brief class InstrSet - main part of CPU, contains (private inheritance) all
  *                         possible extensions (the basic set too). AddrSz
  *                         means size of address space and program counter
  *                         register PC.
  */
-template <typename MemoryType, size_t AddrSz, typename... Exts>
+template <typename MemoryType, typename... Exts>
 class InstrSet : private Exts... {
+
+public:
+  static constexpr size_t AddrSz = MemoryType::getAddrSz();
 
 protected:
   Register<AddrSz> *PC;
@@ -190,7 +184,24 @@ public:
   }
 
   void increasePC() const { ++*PC; }
+  Register<AddrSz> readPC() const { return *PC; }
   void setPC(unsigned long long PcValue) const { *PC = PcValue; }
+
+  uint64_t readXReg(unsigned Reg) const {
+    auto RV32ISet = dynamic_cast<const RV32I::RV32IInstrSet *>(this);
+    if (RV32ISet == nullptr)
+      failWithError(
+          "Request for X registers that do not exist in this architecture");
+    return RV32ISet->readXReg(Reg);
+  }
+
+  void setXReg(unsigned Reg, uint64_t NewValue) const {
+    auto RV32ISet = dynamic_cast<const RV32I::RV32IInstrSet *>(this);
+    if (RV32ISet == nullptr)
+      failWithError(
+          "Request for X registers that do not exist in this architecture");
+    RV32ISet->setXReg(Reg, NewValue);
+  }
 };
 
 } // namespace rvdash

@@ -22,4 +22,11 @@ RV32IInstrExecutor &RV32IInstrExecutor::getExecutorInstance(
 }
 
 } // namespace RV32I
+
+std::ostream &operator<<(std::ostream &Stream,
+                         const typename RV32I::RV32IInstrSet &Set) {
+  Set.dump(Stream);
+  return Stream;
+}
+
 } // namespace rvdash

@@ -103,14 +103,14 @@ public:
   }
 
   virtual void dump(std::ostream &Stream) const {
-    Stream << "Registers Set:\n";
+    Stream << "\t\tRegisters Set:\n";
     if (NamedRegisters.size() != 0) {
       for (const auto &[Name, Reg] : NamedRegisters)
-        Stream << Name << " = 0x" << std::hex << Reg.to_ulong() << "\n";
+        Stream << "\t\t\t" << Name << " = 0x" << std::hex << Reg.to_ulong()
+               << "\n";
     }
-    Stream << "\nRegisters: \n";
     for (auto Idx = 0; Idx < static_cast<int>(OwnRegs.size()); ++Idx)
-      Stream << SetName << std::dec << Idx << " = 0x" << std::hex
+      Stream << "\t\t\t" << SetName << std::dec << Idx << " = 0x" << std::hex
              << OwnRegs[Idx].to_ulong() << "\n";
     Stream << std::dec;
   }
