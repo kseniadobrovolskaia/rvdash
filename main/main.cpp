@@ -5,8 +5,6 @@
 
 #include <fstream>
 #include <getopt.h>
-#include <iostream>
-#include <iterator>
 
 #define DEBUG
 #undef DEBUG
@@ -14,16 +12,20 @@
 namespace rvdash {
 
 static std::optional<const char *> LogFilePath;
+static std::optional<unsigned long long> RamStart;
 static std::optional<unsigned long long> RamSize;
 static std::optional<unsigned long long> Pc;
 
+#define RAM_START 1000
+#define RAM_SIZE 1001
 // clang-format off
 static struct option CmdLineOpts[] = {
-    {"help",             no_argument,        0,  'h'},
-    {"ram-size",         required_argument,  0,  'r'},
-    {"program-counter",  required_argument,  0,  'p'},
-    {"trace-output",     required_argument,  0,  't'},
-    {0,                  0,                  0,   0}};
+    {"help",             no_argument,        0,  'h'        },
+    {"ram-start",        required_argument,  0,  RAM_START  },
+    {"ram-size",         required_argument,  0,  RAM_SIZE   },
+    {"program-counter",  required_argument,  0,  'p'        },
+    {"trace-output",     required_argument,  0,  't'        },
+    {0,                  0,                  0,   0         }};
 // clang-format on
 
 static void printHelp(const char *ProgName, int ErrorCode) {
@@ -42,37 +44,55 @@ static void printHelp(const char *ProgName, int ErrorCode) {
 }
 
 /**
+ * @brief setValue - it helps process incorrect values, which are given
+ *                   for unsigned long long argument.
+ */
+static void setValue(const char *NameValue, const char *GivenValue,
+                     std::optional<unsigned long long> &SetVar) {
+  // find sign
+  while (isspace((unsigned char)*GivenValue))
+    GivenValue++;
+  char Sign = *GivenValue;
+  char *Endptr; //  Store the location where conversion stopped
+  unsigned long TryValue = strtoul(GivenValue, &Endptr, /* base */ 10);
+
+  if (GivenValue == Endptr)
+    failWithError("Invalid " + std::string(NameValue) + " " +
+                  std::string(GivenValue) + " provided");
+  else if (*Endptr)
+    failWithError("Extra text after " + std::string(NameValue));
+  else if (Sign == '-' && TryValue != 0)
+    failWithError("Negative " + std::string(NameValue));
+  SetVar = TryValue;
+#ifdef DEBUG
+  std::cerr << "Setting " << NameValue << " to " << TryValue << "\n";
+#endif
+}
+
+/**
  * @brief parseCmdLine - it parses the command line arguments and returns the
  *                       index for the binary that should be executed.
  */
 static int parseCmdLine(int Argc, char **Argv) {
   int NextOpt;
-  uint64_t RamSizeMB = 0;
   while (true) {
     NextOpt = getopt_long(Argc, Argv,
                           "h"
-                          "r:"
                           "p:"
                           "t:",
                           CmdLineOpts, NULL);
     if (NextOpt == -1)
       break;
     switch (NextOpt) {
-    case 'r':
-      RamSizeMB = atoll(optarg);
-      if (RamSizeMB) {
-#ifdef DEBUG
-        std::cerr << "Setting ram-size to " << RamSizeMB << " MB\n";
-#endif
-        RamSize = RamSizeMB << 20;
-      } else
-        failWithError("Invalid ram-size " + std::string(optarg) + " provided");
+    case RAM_START:
+      setValue("ram-start", optarg, RamStart);
+      break;
+    case RAM_SIZE:
+      setValue("ram-size", optarg, RamSize);
+      RamSize.value() <<= 20;
       break;
     case 'p':
-      Pc = atoll(optarg);
-#ifdef DEBUG
-      std::cerr << "Setting start pc to " << optarg << "\n";
-#endif
+      setValue("program counter", optarg, Pc);
       break;
     case 'h':
       printHelp(Argv[0], 0);
@@ -111,9 +131,11 @@ putProgramInBuffer(const std::string &ProgName) {
 template <size_t Sz>
 void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
                      std::ostream &LogFile) {
-  Memory<Sz> Mem;
-  if (RamSize.has_value())
-    Mem.setRamSize(RamSize.value());
+  if (!RamStart.has_value())
+    RamStart = Memory<Sz>::getDefaultRamStart();
+  if (!RamSize.has_value())
+    RamSize = Memory<Sz>::getDefaultRamSz();
+  Memory<Sz> Mem(RamStart.value(), RamSize.value());
   InstrSet<Memory<Sz>, RV32I::RV32IInstrSet> InstructionSet(Mem, LogFile);
   CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
   Cpu.execute(Pc.value(), Program);

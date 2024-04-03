@@ -6,7 +6,7 @@ option(BUILD_TESTS "Build tests" ON)
 option(BUILD_SNIPPY_MODEL "Build libSnippyRVdash.so library for llvm-snippy" ON)
 
 
-add_compile_options(-std=c++20 -ggdb)
+add_compile_options(-std=c++20)
 
 set(SOURCE_EXE main/main.cpp
                main/Error.cpp

@@ -2,7 +2,6 @@
 #define REGISTER_H
 
 #include <algorithm>
-#include <assert.h>
 #include <bitset>
 #include <cstring>
 #include <iostream>
@@ -10,7 +9,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "Error.h"

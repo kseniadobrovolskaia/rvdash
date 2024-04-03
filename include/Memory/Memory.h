@@ -1,7 +1,6 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <assert.h>
 #include <bitset>
 #include <climits>
 #include <iostream>
@@ -46,8 +45,8 @@ template <unsigned PageSz> struct Page {
   template <typename BitsIt>
   void setPageBits(unsigned long long Begin, unsigned long long End,
                    BitsIt It) const {
-    assert(Begin % CHAR_BIT == 0 && End % CHAR_BIT == 0 &&
-           "Misaligned on byte store in page");
+    if (Begin % CHAR_BIT != 0 || End % CHAR_BIT != 0)
+      failWithError("Misaligned on byte store in page");
     if ((Begin < FirstAddr) || (End > FirstAddr + PageSz))
       failWithError("Storing addresses not belonging to this page");
     for (auto Idx = Begin - FirstAddr; Idx < End - FirstAddr; ++Idx, ++It)
@@ -97,24 +96,32 @@ std::ostream &operator<<(std::ostream &Stream, const Page<PageSz> &Pg) {
  * @brief class Memory - class for representing virtual memory
  *                       consisting of pages allocated when memory is accessed.
  *                       Supports AddrSz-bit address space with byte addressing.
+ *                       All memory is random access (for now).
+ *
  *                       All public methods use an Addr and Size in bytes,
  *                       while private methods use bits.
  */
-template <unsigned AddrSz, unsigned PageSz = 320 /* bits */> class Memory {
+template <unsigned AddrSz, unsigned PageSz = 4096 * CHAR_BIT /* 4 KB */>
+class Memory {
 
-  unsigned long long RamStart /* bytes */;
-  unsigned long long RamSize /* bytes */;
+  unsigned long long RamStart /* bits */;
+  unsigned long long RamSize /* bits */;
   std::set<Page<PageSz>> Pages;
 
 public:
-  Memory(unsigned long long RamStrt /* bytes */ = 0,
-         unsigned long long RamSz /* bytes */ = 1ull << 17 /* 1 MB */)
-      : RamStart(RamStrt), RamSize(RamSz){};
+  Memory(unsigned long long RamStrt = 0 /* bytes */,
+         unsigned long long RamSz = 1ull << 20 /* 1 MB */)
+      : RamStart(RamStrt * CHAR_BIT), RamSize(RamSz * CHAR_BIT) {
+    if ((RamStart + RamSize) >= (1ull << AddrSz))
+      failWithError("RAM addresses exceeds addr space size " +
+                    std::to_string(1ull << AddrSz));
+  };
 
   constexpr static unsigned short getAddrSz() { return AddrSz; }
-  constexpr static unsigned short getPageSz() { return PageSz; }
+  constexpr static unsigned long long getPageSz() { return PageSz; }
+  constexpr static unsigned long long getDefaultRamStart() { return 0; }
+  constexpr static unsigned long long getDefaultRamSz() { return 1ull << 20; }
   const std::set<Page<PageSz>> &getPages() const { return Pages; }
-  void setRamSize(unsigned long long Ram) { RamSize = Ram; }
 
   template <typename RegisterType>
   void load(unsigned long long Addr, unsigned long long Size,
@@ -125,7 +132,7 @@ public:
     Size *= CHAR_BIT;
     validate(Addr, Size);
     auto Bits = getBits(Addr, Size);
-    for (unsigned long long Idx = 0; Idx < Size; Idx++)
+    for (auto Idx = 0; Idx < Size; ++Idx)
       Reg[Idx] = Bits[Idx];
   }
 
@@ -146,7 +153,7 @@ public:
     validate(Addr, Size);
     std::vector<bool> Bits;
     Bits.reserve(Reg.size());
-    for (unsigned long long Idx = 0; Idx < Size; ++Idx)
+    for (auto Idx = 0; Idx < Size; ++Idx)
       Bits.push_back(Reg[Idx]);
     setBits(Addr, Bits);
   }
@@ -198,10 +205,10 @@ private:
     std::vector<bool> Result;
     Result.reserve(Size);
     for (auto PageIt = First; Size > 0; PageIt++) {
-      unsigned long long LoadBegin = Addr;
-      unsigned long long UsedLoad = PageSz - (LoadBegin - (*PageIt).FirstAddr);
-      unsigned long long LoadSz = UsedLoad < Size ? UsedLoad : Size;
-      unsigned long long LoadEnd = LoadBegin + LoadSz;
+      auto LoadBegin = Addr;
+      auto UsedLoad = PageSz - (LoadBegin - (*PageIt).FirstAddr);
+      auto LoadSz = UsedLoad < Size ? UsedLoad : Size;
+      auto LoadEnd = LoadBegin + LoadSz;
       auto Bits = (*PageIt).getPageBits(LoadBegin, LoadEnd);
       std::copy(Bits.begin(), Bits.end(), std::back_inserter(Result));
       Addr += LoadSz;
@@ -211,20 +218,19 @@ private:
   }
 
   auto getFirstPage(unsigned long long Addr) const {
-    unsigned long long StartAddr = Addr / PageSz * PageSz;
+    auto StartAddr = Addr / PageSz * PageSz;
     return Pages.find(StartAddr);
   }
 
   void setBits(unsigned long long Addr, const std::vector<bool> &Bits) const {
     auto First = getFirstPage(Addr);
-    unsigned long long Size = Bits.size();
-    unsigned long long Curr = 0;
+    auto Size = Bits.size();
+    auto Curr = 0;
     for (auto PageIt = First; Size > 0; PageIt++) {
-      unsigned long long StoreBegin = Addr;
-      unsigned long long UsedStore =
-          PageSz - (StoreBegin - (*PageIt).FirstAddr);
-      unsigned long long StoreSz = UsedStore < Size ? UsedStore : Size;
-      unsigned long long StoreEnd = StoreBegin + StoreSz;
+      auto StoreBegin = Addr;
+      auto UsedStore = PageSz - (StoreBegin - (*PageIt).FirstAddr);
+      auto StoreSz = UsedStore < Size ? UsedStore : Size;
+      auto StoreEnd = StoreBegin + StoreSz;
       (*PageIt).setPageBits(StoreBegin, StoreEnd, Bits.begin() + Curr);
       Addr += StoreSz;
       Curr += StoreSz;
@@ -257,11 +263,11 @@ private:
   }
 
   void validate(unsigned long long Addr, unsigned long long Size) {
-    if (Addr >= (RamStart + RamSize) * CHAR_BIT || Addr < RamStart)
+    if (Addr >= (RamStart + RamSize) || Addr < RamStart)
       failWithError("Invalid memory access, address " + std::to_string(Addr) +
                     " not available. Avalable addresses: [" +
-                    std::to_string(RamStart) + ", " +
-                    std::to_string(RamStart + RamSize) + "]");
+                    std::to_string(RamStart / CHAR_BIT) + ", " +
+                    std::to_string((RamStart + RamSize) / CHAR_BIT) + "]");
     if (Addr >= (1ull << AddrSz))
       failWithError("Address exceeds addr space size " +
                     std::to_string(1ull << AddrSz));
@@ -270,10 +276,10 @@ private:
   }
 
   void allocate(unsigned long long Addr, unsigned long long Size) {
-    unsigned long long StartAddr = Addr / PageSz * PageSz;
+    auto StartAddr = Addr / PageSz * PageSz;
     Pages.insert(Page<PageSz>(StartAddr));
 
-    unsigned long long Allocated = StartAddr + PageSz - Addr;
+    auto Allocated = StartAddr + PageSz - Addr;
     if (Allocated < Size)
       allocate(StartAddr + PageSz, Size - Allocated);
   }

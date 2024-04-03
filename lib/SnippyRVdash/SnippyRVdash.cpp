@@ -7,8 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-const char *VERSION_SYMBOL_NAME = "1.0";
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -19,15 +17,13 @@ using namespace rvdash;
 
 /**
  * @brief class SnippyRVdash - this class is the model for Snippy.
- *                             It contains the CPU, Instructions set
- *                             (architecture) and memory. It helps
- *                             to forward all requests from
- *                             interface functions to the rvdash
- *                             library.
+ *                             It helps to forward all requests
+ *                             from interface functions to the
+ *                             rvdash library.
  */
 class SnippyRVdash {
 
-  std::ofstream LogFile;
+  std::optional<std::ofstream> LogFile;
 
   Memory<32> Mem;
   InstrSet<Memory<32>, RV32I::RV32IInstrSet> InstructionSet;
@@ -36,11 +32,11 @@ class SnippyRVdash {
 public:
   SnippyRVdash(const char *LogFilePath, unsigned long long RamSt,
                unsigned long long RamSz)
-      : LogFile(LogFilePath), Mem(RamSt, RamSz), InstructionSet(Mem, LogFile),
-        Cpu(Mem, InstructionSet) {
-    if (!LogFile.is_open())
+      : LogFile(LogFilePath), Mem(RamSt, RamSz),
+        InstructionSet(Mem, LogFile.value()), Cpu(Mem, InstructionSet) {
+    if (!LogFile.value().is_open())
       failWithError("Can't open log file " + std::string(LogFilePath));
-    LogFile << "====================rvdash start====================\n";
+    LogFile.value() << "====================rvdash start====================\n";
   }
   SnippyRVdash(unsigned long long RamSt, unsigned long long RamSz)
       : Mem(RamSt, RamSz), InstructionSet(Mem, std::cout),
@@ -48,9 +44,10 @@ public:
     std::cout << "====================rvdash start====================\n";
   }
   ~SnippyRVdash() {
-    if (LogFile.is_open()) {
-      LogFile << "===================rvdash complete==================\n";
-      LogFile.close();
+    if (LogFile.has_value()) {
+      LogFile.value()
+          << "===================rvdash complete==================\n";
+      LogFile.value().close();
     } else
       std::cout << "===================rvdash complete==================\n";
   }
@@ -95,6 +92,8 @@ struct RVMState {
 RVMState *rvm_modelCreate(const RVMConfig *Config) {
   std::ofstream LogFile(Config->LogFilePath);
   RVMState *State;
+  // This is a temporary solution.
+  // The model does not yet support ROM memory, but it will be available soon.
   unsigned long long RamStart, RamSize;
   if (Config->RomStart > Config->RamStart) {
     RamStart = Config->RamStart;
@@ -129,23 +128,18 @@ int rvm_executeInstr(RVMState *State) {
 void rvm_readMem(const RVMState *State, uint64_t Addr, size_t Count,
                  char *Data) {
   auto &Model = State->Model;
-  for (size_t Idx = 0; Idx < Count; ++Idx) {
+  for (auto Idx = 0; Idx < Count; ++Idx)
     Data[Idx] = Model->loadByte(Addr + Idx);
-  }
 }
 
 void rvm_writeMem(RVMState *State, uint64_t Addr, size_t Count,
                   const char *Data) {
-  Register<CHAR_BIT> Byte;
   auto &Model = State->Model;
-  for (size_t Idx = 0; Idx < Count; ++Idx) {
-    Byte = Data[Idx];
-    Model->storeByte(Addr + Idx, Byte);
-  }
+  for (auto Idx = 0; Idx < Count; ++Idx)
+    Model->storeByte(Addr + Idx, Data[Idx]);
 }
 
 uint64_t rvm_readPC(const RVMState *State) { return State->Model->readPC(); }
-
 void rvm_setPC(RVMState *State, uint64_t NewPC) { State->Model->setPC(NewPC); }
 
 RVMRegT rvm_readXReg(const RVMState *State, RVMXReg Reg) {
@@ -156,13 +150,11 @@ void rvm_setXReg(RVMState *State, RVMXReg Reg, RVMRegT Value) {
   State->Model->setXReg(Reg, Value);
 }
 
-int rvm_queryCallbackSupportPresent() { return 0; }
-
-void rvm_logMessage(const char *Message) { std::cout << Message << "\n"; }
-
 RVMRegT rvm_readCSRReg(const RVMState *State, unsigned Reg) { return 0; }
-
 void rvm_setCSRReg(RVMState *State, unsigned Reg, RVMRegT Value) {}
+
+int rvm_queryCallbackSupportPresent() { return 0; }
+void rvm_logMessage(const char *Message) {}
 
 // These functions are not implemented because the model does not support these
 // registers
