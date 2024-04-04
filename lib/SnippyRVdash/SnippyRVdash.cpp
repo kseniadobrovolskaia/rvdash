@@ -154,7 +154,7 @@ RVMRegT rvm_readCSRReg(const RVMState *State, unsigned Reg) { return 0; }
 void rvm_setCSRReg(RVMState *State, unsigned Reg, RVMRegT Value) {}
 
 int rvm_queryCallbackSupportPresent() { return 0; }
-void rvm_logMessage(const char *Message) {}
+void rvm_logMessage(const char *Message) { std::cout << Message; }
 
 // These functions are not implemented because the model does not support these
 // registers
