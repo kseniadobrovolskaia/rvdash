@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  run-tests-in-container:
+    runs-on: ubuntu-latest
+    container:
+        image: ghcr.io/riscv-technologies-lab/rv_tools_image:1.0.1
+
+    steps:
+
+      - name: Download a code
+        uses: actions/checkout@v3
+   
+      - name: Build
+        run: |
+          cmake -B build
+          cd build
+          make
+
+      - name: Run tests
+        shell: bash
+        run: |
+          source /opt/sc-dt/env.sh
+          cd build/Test
+          ./rvdashTests
+          

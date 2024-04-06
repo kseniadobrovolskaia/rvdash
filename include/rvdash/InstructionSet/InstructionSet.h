@@ -72,8 +72,9 @@ public:
 
   using ExecuteFuncT = ExecuteFuncType<InstrSet>;
 
-  InstrSet(MemoryType &Mem, std::ostream &File = std::cout)
-      : Exts()..., Memory(Mem), LogFile(File) {
+  InstrSet(MemoryType &Mem, std::ostream &File = std::cout,
+           bool IsForTests = false)
+      : Exts(IsForTests)..., Memory(Mem), LogFile(File) {
     if (!isThereBase())
       failWithError("One base set must be selected");
     PC = extractPC();

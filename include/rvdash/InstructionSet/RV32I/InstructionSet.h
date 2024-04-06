@@ -7,8 +7,6 @@
 namespace rvdash {
 namespace RV32I {
 
-class RV32IInstrSet;
-
 template <unsigned OldBits, unsigned NewBits>
 constexpr inline int32_t signExtend(uint32_t Value) {
   static_assert(NewBits > 0, "Bit width must be greater than 0");
@@ -21,7 +19,10 @@ constexpr inline int32_t signExtend(uint32_t Value) {
 class RV32IRegistersSet final : public RegistersSet<32> {
 
 public:
-  RV32IRegistersSet() : RegistersSet("X", 32) { OwnRegs[0] = 0; };
+  RV32IRegistersSet() : RegistersSet("X", 32) {
+    addNamedRegister("pc");
+    OwnRegs[0] = 0;
+  };
 
   void setRegister(unsigned RegIdx, const Register<32> &NewValue) override {
     if (RegIdx == 0)
@@ -39,21 +40,20 @@ public:
 //--------------------------------RV32IInstrExecutor-------------------------------------
 
 /**
- * @brief class RV32IInstrExecutor - singleton RV32I executor needed to
- *                                   contain static functions to execute
- *                                   all extension instructions.
+ * @brief class RV32IInstrExecutor - RV32I executor needed to contain
+ *                                   static functions and X32 registers
+ *                                   to execute all extension instructions.
  */
 class RV32IInstrExecutor {
+
   static std::shared_ptr<RV32IRegistersSet> Registers;
 
-  RV32IInstrExecutor() {};
-  RV32IInstrExecutor(std::shared_ptr<RV32IRegistersSet> Regs) {
-    Registers = Regs;
-  };
-
 public:
-  static RV32IInstrExecutor &
-  getExecutorInstance(std::shared_ptr<RV32IRegistersSet> Regs);
+  RV32IInstrExecutor(bool IsForTests = false) {
+    if (Registers != nullptr && !IsForTests)
+      failWithError("RV32I Registers already instantiated");
+    Registers = std::make_shared<RV32IRegistersSet>();
+  };
 
   template <typename InstrSetType>
   void execute(Instruction Instr, ExecuteFuncType<InstrSetType> Func,
@@ -61,7 +61,9 @@ public:
     Func(Instr, Set);
   }
 
-//---------------------------------------------------------------------------------------
+  std::shared_ptr<RV32IRegistersSet> getRegisters() const { return Registers; }
+
+  //---------------------------------------------------------------------------------------
 
   template <typename InstrSetType>
   static void executeADD(Instruction Instr, InstrSetType &Set) {
@@ -429,7 +431,7 @@ public:
   static void executeSLTIU(Instruction Instr, InstrSetType &Set) {
     auto Rd = Instr.extractRd();
     auto Rs1 = Instr.extractRs1();
-    unsigned Imm = Instr.extractImm_11_0();
+    unsigned Imm = signExtend<12, 32>(Instr.extractImm_11_0());
     unsigned Rs1Value = Registers->getRegister(Rs1).to_ulong();
     bool Result = Rs1Value < Imm;
     Set.LogFile << "sltiu "
@@ -458,7 +460,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ 1, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 1, Result, Set.LogFile);
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
@@ -479,7 +481,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ 2, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 2, Result, Set.LogFile);
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
@@ -500,7 +502,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ 1, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 1, Result, Set.LogFile);
     Result = signExtend<CHAR_BIT, 32>(Result.to_ulong());
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
@@ -522,7 +524,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ 2, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 2, Result, Set.LogFile);
     Result = signExtend<2 * CHAR_BIT, 32>(Result.to_ulong());
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
@@ -544,7 +546,7 @@ public:
                 << "X" << int(Rd) << ", " << std::hex << "0x" << Imm << "(X"
                 << std::dec << int(Rs1) << ")\n";
     Set.LogFile << std::dec;
-    Set.getMemory().load(ResultAddr, /* Size */ 4, Result);
+    Set.getMemory().load(ResultAddr, /* Size */ 4, Result, Set.LogFile);
     Registers->setRegister(Rd, Result, Set.LogFile);
 #ifdef DEBUG
     Set.LogFile << "Debug: " << std::dec << "rd (X" << int(Rd)
@@ -896,7 +898,7 @@ public:
 //--------------------------------RV32IInstrDecoder--------------------------------------
 
 /**
- * @brief class RV32IInstrDecoder - singleton RV32I decoder works like this:
+ * @brief class RV32IInstrDecoder - RV32I decoder works like this:
  *                                  1. Table of all instructions is filled in.
  *                                  2. When a new instruction needs to be
  *                                     decoded, masks of all instructions are
@@ -906,11 +908,7 @@ public:
  */
 class RV32IInstrDecoder {
 
-  RV32IInstrDecoder() {};
-
 public:
-  static RV32IInstrDecoder &getDecoderInstance();
-
   template <typename InstrSetType>
   struct InstMapElem {
     Instruction Instr;
@@ -958,15 +956,12 @@ public:
 class RV32IInstrSet {
 
   std::shared_ptr<RV32IRegistersSet> Registers;
-  RV32IInstrDecoder &Decoder;
-  RV32IInstrExecutor &Executor;
+  RV32IInstrDecoder Decoder;
+  RV32IInstrExecutor Executor;
 
 public:
-  RV32IInstrSet()
-      : Registers(std::make_shared<RV32IRegistersSet>()),
-        Decoder(RV32IInstrDecoder::getDecoderInstance()),
-        Executor(RV32IInstrExecutor::getExecutorInstance(Registers)) {
-    Registers->addNamedRegister("pc");
+  RV32IInstrSet(bool IsForTests = false) : Executor(IsForTests) {
+    Registers = Executor.getRegisters();
   }
 
   Register<32> *getPC() { return &Registers->getNamedRegister("pc"); }

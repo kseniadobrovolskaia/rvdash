@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Error.h"
@@ -96,7 +97,7 @@ public:
   virtual void setNamedRegister(const std::string &Name,
                                 const Register<Sz> &NewValue,
                                 std::ostream &LogFile) {
-    NamedRegisters.at(Name) = NewValue;
+    setNamedRegister(Name, NewValue);
     logChange(Name, NewValue, LogFile);
   }
 
@@ -120,8 +121,7 @@ protected:
   std::unordered_map<std::string, Register<Sz>> NamedRegisters;
 };
 
-template <size_t Sz>
-std::bitset<Sz> operator++(Register<Sz>& Reg) {
+template <size_t Sz> std::bitset<Sz> operator++(Register<Sz> &Reg) {
   Reg = Reg.to_ulong() + Sz / CHAR_BIT;
   return Reg;
 }

@@ -28,8 +28,8 @@ template <size_t Sz>
 void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
                      std::ostream &ResultFile) {
   Memory<Sz> Mem;
-  InstrSet<Memory<Sz>, RV32I::RV32IInstrSet> InstructionSet(Mem, ResultFile);
-  CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
+  CPU<decltype(Mem), InstrSet<decltype(Mem), RV32I::RV32IInstrSet>> Cpu{
+      Mem, ResultFile, /* IsForTests */ true};
   Cpu.execute(0 /* pc */, Program);
 }
 

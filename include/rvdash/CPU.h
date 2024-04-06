@@ -19,13 +19,15 @@ template <typename MemoryType, typename InstrSetType> class CPU {
 
 private:
   MemoryType &VirtualMemory;
-  InstrSetType &ExtSet;
+  InstrSetType ExtSet;
 
   std::ostream &LogFile;
 
 public:
-  CPU(MemoryType &Mem, InstrSetType &E)
-      : VirtualMemory(Mem), ExtSet(E), LogFile(E.LogFile) {}
+  CPU(MemoryType &Mem, std::ostream &LogFile = std::cout,
+      bool IsForTests = false)
+      : VirtualMemory(Mem), ExtSet(Mem, LogFile, IsForTests), LogFile(LogFile) {
+  }
 
   void dump() const { dump(LogFile); }
   void dump(std::ostream &Stream) const {
@@ -72,7 +74,7 @@ public:
     LogFile << "===================Simulation completed===================\n";
   }
 
-  void step() const { ExtSet.step(); }
+  void step() { ExtSet.step(); }
   void increasePC() const { ExtSet.increasePC(); }
   Register<InstrSetType::AddrSz> readPC() const { return ExtSet.readPC(); }
   void setPC(unsigned long long PcValue) const { ExtSet.setPC(PcValue); }

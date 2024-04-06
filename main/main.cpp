@@ -136,8 +136,8 @@ void generateProcess(const std::vector<Register<CHAR_BIT>> &Program,
   if (!RamSize.has_value())
     RamSize = Memory<Sz>::getDefaultRamSz();
   Memory<Sz> Mem(RamStart.value(), RamSize.value());
-  InstrSet<Memory<Sz>, RV32I::RV32IInstrSet> InstructionSet(Mem, LogFile);
-  CPU<Memory<Sz>, decltype(InstructionSet)> Cpu{Mem, InstructionSet};
+  CPU<decltype(Mem), InstrSet<decltype(Mem), RV32I::RV32IInstrSet>> Cpu{
+      Mem, LogFile};
   Cpu.execute(Pc.value(), Program);
 }
 

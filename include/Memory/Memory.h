@@ -54,7 +54,8 @@ template <unsigned PageSz> struct Page {
   }
 
   void dump(std::ostream &Stream) const {
-    Stream << "First address: " << FirstAddr << "\n";
+    Stream << "First address: 0x" << std::hex << FirstAddr / CHAR_BIT
+           << std::dec << "\n";
     Stream << "Bits: \n";
     Stream << Space << "\n";
   }
@@ -134,6 +135,13 @@ public:
     auto Bits = getBits(Addr, Size);
     for (auto Idx = 0; Idx < Size; ++Idx)
       Reg[Idx] = Bits[Idx];
+  }
+
+  template <typename RegisterType>
+  void load(unsigned long long Addr, unsigned long long Size, RegisterType &Reg,
+            std::ostream &LogFile) {
+    load(Addr, Size, Reg);
+    logGet(Addr * CHAR_BIT, Size * CHAR_BIT, Reg, LogFile);
   }
 
   std::vector<bool> load(unsigned long long Addr, unsigned long long Size) {
@@ -224,7 +232,7 @@ private:
 
   void setBits(unsigned long long Addr, const std::vector<bool> &Bits) const {
     auto First = getFirstPage(Addr);
-    auto Size = Bits.size();
+    int Size = Bits.size();
     auto Curr = 0;
     for (auto PageIt = First; Size > 0; PageIt++) {
       auto StoreBegin = Addr;
@@ -239,26 +247,26 @@ private:
   }
 
   template <typename RegisterType>
-  void printBits(unsigned long long Size, RegisterType &Bits,
+  void printBits(unsigned long long Size, const RegisterType &Bits,
                  std::ostream &LogFile) const {
-    for (auto CntBytes = 0; CntBytes < static_cast<int>(Size) / CHAR_BIT;
-         ++CntBytes) {
-      if (CntBytes % 4 == 0)
-        LogFile << "\n";
-      else
-        LogFile << " ";
-      for (auto B = CHAR_BIT; B > 0; --B)
-        LogFile << Bits[CntBytes * CHAR_BIT + B - 1];
-    }
-    LogFile << "\n\n";
+    LogFile << " 0x" << std::hex << Bits.to_ulong() << std::dec << "\n";
   }
 
   template <typename RegisterType>
   void logChange(unsigned long long Addr, unsigned long long Size,
-                 RegisterType &Bits, std::ostream &LogFile) const {
-    LogFile << std::hex << "\nChanged memory bytes [" << std::hex << "0x"
-            << Addr / CHAR_BIT << ", "
-            << "0x" << (Addr + Size) / CHAR_BIT << "].\nNew bytes:" << std::dec;
+                 const RegisterType &Bits, std::ostream &LogFile) const {
+    LogFile << "Changed memory bytes [" << std::hex << "0x" << Addr / CHAR_BIT
+            << ", "
+            << "0x" << (Addr + Size) / CHAR_BIT << "] <-" << std::dec;
+    printBits(Size, Bits, LogFile);
+  }
+
+  template <typename RegisterType>
+  void logGet(unsigned long long Addr, unsigned long long Size,
+              const RegisterType &Bits, std::ostream &LogFile) const {
+    LogFile << "Read memory bytes [" << std::hex << "0x" << Addr / CHAR_BIT
+            << ", "
+            << "0x" << (Addr + Size) / CHAR_BIT << "] ->" << std::dec;
     printBits(Size, Bits, LogFile);
   }
 
@@ -286,5 +294,4 @@ private:
 };
 
 } // namespace rvdash
-
 #endif // MEMORY_H

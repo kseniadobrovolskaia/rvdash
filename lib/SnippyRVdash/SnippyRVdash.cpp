@@ -26,21 +26,18 @@ class SnippyRVdash {
   std::optional<std::ofstream> LogFile;
 
   Memory<32> Mem;
-  InstrSet<Memory<32>, RV32I::RV32IInstrSet> InstructionSet;
-  CPU<decltype(Mem), decltype(InstructionSet)> Cpu;
+  CPU<decltype(Mem), InstrSet<decltype(Mem), RV32I::RV32IInstrSet>> Cpu;
 
 public:
   SnippyRVdash(const char *LogFilePath, unsigned long long RamSt,
                unsigned long long RamSz)
-      : LogFile(LogFilePath), Mem(RamSt, RamSz),
-        InstructionSet(Mem, LogFile.value()), Cpu(Mem, InstructionSet) {
+      : LogFile(LogFilePath), Mem(RamSt, RamSz), Cpu(Mem, LogFile.value()) {
     if (!LogFile.value().is_open())
       failWithError("Can't open log file " + std::string(LogFilePath));
     LogFile.value() << "====================rvdash start====================\n";
   }
   SnippyRVdash(unsigned long long RamSt, unsigned long long RamSz)
-      : Mem(RamSt, RamSz), InstructionSet(Mem, std::cout),
-        Cpu(Mem, InstructionSet) {
+      : Mem(RamSt, RamSz), Cpu(Mem) {
     std::cout << "====================rvdash start====================\n";
   }
   ~SnippyRVdash() {
@@ -66,7 +63,12 @@ public:
     return Cpu.setXReg(static_cast<unsigned>(Reg), NewValue);
   }
 
-  void step() const { Cpu.step(); }
+  void dumpMem() const {
+    std::ofstream File("Mem.dump");
+    Mem.dump(File);
+  }
+
+  void step() { Cpu.step(); }
   void increasePC() const { Cpu.increasePC(); }
   uint64_t readPC() const { return Cpu.readPC().to_ullong(); }
   void setPC(unsigned long long PcValue) const { Cpu.setPC(PcValue); }
@@ -150,6 +152,8 @@ void rvm_setXReg(RVMState *State, RVMXReg Reg, RVMRegT Value) {
   State->Model->setXReg(Reg, Value);
 }
 
+// There are no CSR registers in the model yet,
+// but to show that everything is fine, zero is returned here
 RVMRegT rvm_readCSRReg(const RVMState *State, unsigned Reg) { return 0; }
 void rvm_setCSRReg(RVMState *State, unsigned Reg, RVMRegT Value) {}
 
