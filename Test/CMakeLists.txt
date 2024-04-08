@@ -26,6 +26,7 @@ add_custom_target(gen_tests
                   ALL
                   COMMAND chmod +x ${CMAKE_SOURCE_DIR}/Test/TestGen.bash
                   COMMAND ${CMAKE_SOURCE_DIR}/Test/TestGen.bash ${CMAKE_SOURCE_DIR}/Test
+                  COMMENT "Generating tests"
                  )
 
 add_executable(rvdashTests

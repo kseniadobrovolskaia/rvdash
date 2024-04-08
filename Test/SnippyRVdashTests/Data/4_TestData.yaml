@@ -1,0 +1,33 @@
+# 4 Test: Branches 
+
+
+options:
+  march: riscv32
+  num-instrs: 10000
+  model-plugin: ../../build/lib/SnippyRVdash/libSnippyRVdash.so
+  trace-log: ../../Test/SnippyRVdashTests/Results/4_TestResults.txt
+  reserved-regs-list: [gp]
+
+sections:
+  - name: text
+    VMA: 0x8000000
+    SIZE: 0x100000
+    LMA: 0x8000000
+    ACCESS: rx
+  - name: data
+    VMA: 0x4000000
+    SIZE: 0x100000
+    LMA: 0x4000000
+    ACCESS: rw
+
+histogram:
+  - [ADDI,   1.0] 
+  - [ADD,   1.0] 
+
+  - [BEQ,   1.0] 
+  - [BNE,   1.0] 
+  - [BLT,   1.0] 
+  - [BGE,   1.0]
+  - [BLTU,  1.0]  
+  - [BGEU,  1.0]  
+  

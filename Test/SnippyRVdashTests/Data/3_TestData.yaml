@@ -1,0 +1,37 @@
+# 3 Test: Loads and Stores
+
+
+options:
+  march: riscv32
+  num-instrs: 10000
+  model-plugin: ../../build/lib/SnippyRVdash/libSnippyRVdash.so
+  trace-log: ../../Test/SnippyRVdashTests/Results/3_TestResults.txt
+  reserved-regs-list: [gp]
+
+sections:
+  - name: text
+    VMA: 0x8000000
+    SIZE: 0x100000
+    LMA: 0x8000000
+    ACCESS: rx
+  - name: data
+    VMA: 0x4000000
+    SIZE: 0x100000
+    LMA: 0x4000000
+    ACCESS: rw
+
+histogram:
+  - [ADD,   1.0] 
+  - [ADDI,   1.0]  
+  - [LUI,  1.0] 
+  
+  - [LB,    1.0] 
+  - [LH,    1.0] 
+  - [LW,    1.0] 
+  - [LBU,   1.0] 
+  - [LHU,   1.0] 
+  
+  - [SB,    1.0] 
+  - [SH,    1.0] 
+  - [SW,    1.0] 
+  

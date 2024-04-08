@@ -93,3 +93,14 @@ void runOneTest(const std::string NameData, std::ostream &ResultFile) {
     ResultFile << ErrMess;
   }
 }
+
+/**
+ * @brief runOneSnippyModelTest - it run llvm-snippy with
+ *                                SnippyRVdash model.
+ */
+void runOneSnippyModelTest(const std::string NameYaml,
+                           const std::string &NameResult) {
+  auto Cmd = "./" + SnippyPath + " " + NameYaml;
+  if (system(Cmd.c_str()) != 0)
+    rvdash::failWithError("Error during snippy model-plugin test");
+}

@@ -1,0 +1,29 @@
+# 2 Test: Logic instrs
+
+
+options:
+  march: riscv32
+  num-instrs: 10000
+  model-plugin: ../../build/lib/SnippyRVdash/libSnippyRVdash.so
+  trace-log: ../../Test/SnippyRVdashTests/Results/2_TestResults.txt
+  reserved-regs-list: [gp]
+
+sections:
+  - name: text
+    VMA: 0x8000000
+    SIZE: 0x100000
+    LMA: 0x8000000
+    ACCESS: rx
+  - name: data
+    VMA: 0x4000000
+    SIZE: 0x100000
+    LMA: 0x4000000
+    ACCESS: rw
+
+histogram:
+  - [ADD,   1.0] 
+  - [ADDI,   1.0]  
+  
+  - [SLT,   1.0] 
+  - [SLTU,  1.0]   
+  

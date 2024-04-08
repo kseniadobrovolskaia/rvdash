@@ -40,3 +40,27 @@ fi
 echo "All tests for rvdash Error Handling are generated!"
 
 
+# generation SnippyRVdashTests
+if [ ! -d "$1/Snippy" ]; then
+  echo "Downloading Snippy from GitHub"
+  mkdir $1/Snippy
+  cd $1/Snippy
+  wget https://github.com/syntacore/snippy/releases/download/snippy-1.0/snippy-1.0.tar.gz
+  tar -xvzf snippy-1.0.tar.gz
+  cd $1
+fi
+if [ -f "$1/SnippyRVdashTests/GenTests.h" ]; then
+  rm $1/SnippyRVdashTests/GenTests.h
+fi
+NumTest=1
+for i in $( ls $1/SnippyRVdashTests/Data ); do
+  echo "ADD_SNIPPY_MODEL_TEST("$NumTest", SnippyRVdash)" >> GenTests.h
+  let NumTest=NumTest+1
+done
+mv GenTests.h $1/SnippyRVdashTests
+if [ ! -d "$1/SnippyRVdashTests/Results" ]; then
+  mkdir $1/SnippyRVdashTests/Results
+fi
+echo "All tests for SnippyRVdash are generated!"
+
+

@@ -1,0 +1,2 @@
+CHECK: rvdash start
+CHECK: rvdash complete
